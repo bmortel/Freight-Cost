@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Globalization;
-using System.Text;
 using System.Windows.Forms;
 
 namespace FreightCost
@@ -34,11 +33,8 @@ namespace FreightCost
 
         private readonly Button _calc = new Button();
 
-        // History
-        private readonly ListView _history = new ListView();
-        private readonly Button _copySelected = new Button();
-        private readonly Button _copyAll = new Button();
-        private readonly Button _clearHistory = new Button();
+        // History table (cell copy friendly)
+        private readonly DataGridView _history = new DataGridView();
 
         public CalcForm()
         {
@@ -51,7 +47,7 @@ namespace FreightCost
             MinimizeBox = false;
             ClientSize = new Size(1000, 580);
 
-            // Force LIGHT THEME (simple + consistent)
+            // Light-only (native)
             ApplyLightTheme(this);
 
             // ---- Split: left calculator, right history ----
@@ -75,7 +71,7 @@ namespace FreightCost
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));  // checkboxes
             left.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // keypad
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));  // calculate
-            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));  // bottom row (youtube button only)
+            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));  // bottom row (youtube)
             split.Controls.Add(left, 0, 0);
 
             // Inputs area
@@ -208,21 +204,11 @@ namespace FreightCost
                 RowCount = 2,
                 ColumnCount = 1
             };
-            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));   // header buttons
-            right.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // history list
+            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));   // title only
+            right.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // table
             split.Controls.Add(right, 1, 0);
 
-            var header = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 4
-            };
-            header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
-            header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
-            header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
-
-            header.Controls.Add(new Label
+            right.Controls.Add(new Label
             {
                 Text = "History",
                 Dock = DockStyle.Fill,
@@ -230,46 +216,59 @@ namespace FreightCost
                 Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 12f, FontStyle.Bold)
             }, 0, 0);
 
-            _copySelected.Text = "Copy";
-            _copySelected.Dock = DockStyle.Fill;
-            _copySelected.Click += (_, __) => CopySelectedRows();
-
-            _copyAll.Text = "Copy all";
-            _copyAll.Dock = DockStyle.Fill;
-            _copyAll.Click += (_, __) => CopyAllRows();
-
-            _clearHistory.Text = "Clear";
-            _clearHistory.Dock = DockStyle.Fill;
-            _clearHistory.Click += (_, __) => _history.Items.Clear();
-
-            header.Controls.Add(_copySelected, 1, 0);
-            header.Controls.Add(_copyAll, 2, 0);
-            header.Controls.Add(_clearHistory, 3, 0);
-            right.Controls.Add(header, 0, 0);
-
-            _history.Dock = DockStyle.Fill;
-            _history.View = View.Details;
-            _history.FullRowSelect = true;
-            _history.GridLines = true;
-            _history.HideSelection = false;
-            _history.MultiSelect = true;
-
-            _history.Columns.Add("Quote", 150, HorizontalAlignment.Center);
-            _history.Columns.Add("×", 40, HorizontalAlignment.Center);
-            _history.Columns.Add("Fees", 150, HorizontalAlignment.Center);
-            _history.Columns.Add("Freight Cost", 150, HorizontalAlignment.Center);
-
-            var histMenu = new ContextMenuStrip();
-            histMenu.Items.Add("Copy selected", null, (_, __) => CopySelectedRows());
-            histMenu.Items.Add("Copy all", null, (_, __) => CopyAllRows());
-            histMenu.Items.Add(new ToolStripSeparator());
-            histMenu.Items.Add("Clear", null, (_, __) => _history.Items.Clear());
-            _history.ContextMenuStrip = histMenu;
-
+            ConfigureHistoryGrid();
             right.Controls.Add(_history, 0, 1);
 
             AcceptButton = _calc;
             Shown += (_, __) => _input1.Focus();
+        }
+
+        // ========= HISTORY GRID SETUP =========
+        private void ConfigureHistoryGrid()
+        {
+            _history.Dock = DockStyle.Fill;
+
+            // Make it feel like a read-only history table
+            _history.ReadOnly = true;
+            _history.AllowUserToAddRows = false;
+            _history.AllowUserToDeleteRows = false;
+            _history.AllowUserToResizeRows = false;
+            _history.AllowUserToResizeColumns = false;
+            _history.RowHeadersVisible = false;
+            _history.MultiSelect = true;
+
+            // IMPORTANT: lets user click individual cells and Ctrl+C copies selection
+            _history.SelectionMode = DataGridViewSelectionMode.CellSelect;
+            _history.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
+
+            _history.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
+            _history.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+
+            _history.BackgroundColor = SystemColors.Window;
+            _history.BorderStyle = BorderStyle.FixedSingle;
+            _history.CellBorderStyle = DataGridViewCellBorderStyle.Single;
+            _history.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
+
+            _history.EnableHeadersVisualStyles = true;
+
+            // Add columns: Quote | × | Fees | = | Freight Cost
+            _history.Columns.Clear();
+
+            var colQuote = new DataGridViewTextBoxColumn { Name = "Quote", HeaderText = "Quote", Width = 150 };
+            var colMul = new DataGridViewTextBoxColumn { Name = "Mul", HeaderText = "×", Width = 25 };
+            var colFees = new DataGridViewTextBoxColumn { Name = "Fees", HeaderText = "Fees", Width = 150 };
+            var colEq = new DataGridViewTextBoxColumn { Name = "Eq", HeaderText = "=", Width = 25 };
+            var colFreight = new DataGridViewTextBoxColumn { Name = "Freight", HeaderText = "Freight Cost", Width = 150 };
+
+            _history.Columns.AddRange(colQuote, colMul, colFees, colEq, colFreight);
+
+            // Center-align EVERYTHING (headers and cells), per your request
+            _history.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            _history.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+
+            // Optional: prevent sorting arrows / clicks
+            foreach (DataGridViewColumn c in _history.Columns)
+                c.SortMode = DataGridViewColumnSortMode.NotSortable;
         }
 
         // ========= CALCULATION / HISTORY =========
@@ -307,13 +306,14 @@ namespace FreightCost
             // Fees column: show multiplier + flat fee used
             string feesDisplay = $"{multiplier.ToString("0.##", _us)} + {flatFee.ToString("C", _us)}";
 
-            // Add row to HISTORY (this is the ONLY place we show Freight Cost now)
-            var item = new ListViewItem(quote.ToString("C", _us));
-            item.SubItems.Add("×");
-            item.SubItems.Add(feesDisplay);
-            item.SubItems.Add(freight.ToString("C", _us));
-
-            _history.Items.Insert(0, item);
+            // Add row at TOP (newest first)
+            _history.Rows.Insert(0,
+                quote.ToString("C", _us),
+                "×",
+                feesDisplay,
+                "=",
+                freight.ToString("C", _us)
+            );
         }
 
         private static decimal GetMultiplier(decimal quote)
@@ -466,55 +466,21 @@ namespace FreightCost
             tb.ContextMenuStrip = menu;
         }
 
-        private void CopySelectedRows()
-        {
-            if (_history.SelectedItems.Count == 0) return;
-
-            var sb = new StringBuilder();
-            foreach (ListViewItem item in _history.SelectedItems)
-            {
-                sb.Append(item.SubItems[0].Text).Append('\t')
-                  .Append(item.SubItems[1].Text).Append('\t')
-                  .Append(item.SubItems[2].Text).Append('\t')
-                  .Append(item.SubItems[3].Text).AppendLine();
-            }
-            Clipboard.SetText(sb.ToString().TrimEnd());
-        }
-
-        private void CopyAllRows()
-        {
-            if (_history.Items.Count == 0) return;
-
-            var sb = new StringBuilder();
-            foreach (ListViewItem item in _history.Items)
-            {
-                sb.Append(item.SubItems[0].Text).Append('\t')
-                  .Append(item.SubItems[1].Text).Append('\t')
-                  .Append(item.SubItems[2].Text).Append('\t')
-                  .Append(item.SubItems[3].Text).AppendLine();
-            }
-            Clipboard.SetText(sb.ToString().TrimEnd());
-        }
-
         private static void ApplyLightTheme(Control root)
         {
-            // Light-only, simple: lets Windows draw most controls normally.
-            // We keep this minimal so it stays “native”.
             root.BackColor = SystemColors.Control;
             root.ForeColor = SystemColors.ControlText;
 
             foreach (Control c in root.Controls)
             {
-                // Let controls keep default unless you want strict light colors everywhere.
                 if (c is TextBox tb)
                 {
                     tb.BackColor = SystemColors.Window;
                     tb.ForeColor = SystemColors.WindowText;
                 }
-                else if (c is ListView lv)
+                else if (c is DataGridView gv)
                 {
-                    lv.BackColor = SystemColors.Window;
-                    lv.ForeColor = SystemColors.WindowText;
+                    gv.BackgroundColor = SystemColors.Window;
                 }
                 ApplyLightTheme(c);
             }
