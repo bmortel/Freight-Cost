@@ -17,6 +17,15 @@ namespace FreightCost
 
     public class CalcForm : Form
     {
+        private static readonly Color AppBackground = Color.FromArgb(245, 247, 250);
+        private static readonly Color CardBackground = Color.White;
+        private static readonly Color Accent = Color.FromArgb(37, 99, 235);
+        private static readonly Color AccentHover = Color.FromArgb(29, 78, 216);
+        private static readonly Color AccentSoft = Color.FromArgb(226, 236, 255);
+        private static readonly Color TextPrimary = Color.FromArgb(28, 30, 33);
+        private static readonly Color TextMuted = Color.FromArgb(92, 101, 114);
+        private static readonly Color BorderColor = Color.FromArgb(218, 223, 230);
+
         private const string HelpVideoUrl =
             "https://www.youtube.com/watch?v=1WaV2x8GXj0&list=RD1WaV2x8GXj0&start_radio=1";
 
@@ -39,16 +48,15 @@ namespace FreightCost
         public CalcForm()
         {
             // ---- App Window ----
-            Text = "M.F. BOYS CALCULATOR";
-            Font = SystemFonts.MessageBoxFont;
+            Text = "Freight Cost Calculator";
+            Font = new Font("Segoe UI", 10f, FontStyle.Regular);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
             ClientSize = new Size(1000, 580);
-
-            // Light-only (native)
-            ApplyLightTheme(this);
+            BackColor = AppBackground;
+            ForeColor = TextPrimary;
 
             // ---- Split: left calculator, right history ----
             var split = new TableLayoutPanel
@@ -56,6 +64,7 @@ namespace FreightCost
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
                 Padding = new Padding(12),
+                BackColor = AppBackground
             };
             split.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 460));
             split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -65,8 +74,10 @@ namespace FreightCost
             var left = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                RowCount = 5,
+                RowCount = 6,
+                BackColor = AppBackground
             };
+            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));  // header
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 150)); // inputs
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));  // checkboxes
             left.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // keypad
@@ -74,24 +85,57 @@ namespace FreightCost
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));  // bottom row (youtube)
             split.Controls.Add(left, 0, 0);
 
+            // Header
+            var header = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                BackColor = AppBackground,
+                Padding = new Padding(4, 0, 4, 0)
+            };
+            header.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+            header.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
+            var title = new Label
+            {
+                Text = "Freight Cost Calculator",
+                Dock = DockStyle.Fill,
+                Font = new Font(Font.FontFamily, 16f, FontStyle.Bold),
+                ForeColor = TextPrimary
+            };
+            var subtitle = new Label
+            {
+                Text = "Fast quotes with built‑in fees and history",
+                Dock = DockStyle.Fill,
+                Font = new Font(Font.FontFamily, 9f, FontStyle.Regular),
+                ForeColor = TextMuted
+            };
+            header.Controls.Add(title, 0, 0);
+            header.Controls.Add(subtitle, 0, 1);
+            left.Controls.Add(header, 0, 0);
+
             // Inputs area
             var inputs = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 RowCount = 4,
                 ColumnCount = 1,
+                Padding = new Padding(12),
+                BackColor = CardBackground,
+                Margin = new Padding(0, 0, 0, 12)
             };
             inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
             inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
             inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
             inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
-            left.Controls.Add(inputs, 0, 0);
+            left.Controls.Add(inputs, 0, 1);
 
             _label1.Text = "Quote (USD)";
             _label1.Dock = DockStyle.Fill;
+            _label1.Font = new Font(Font, FontStyle.Bold);
+            _label1.ForeColor = TextMuted;
 
             _input1.Dock = DockStyle.Fill;
-            _input1.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 16f, FontStyle.Regular);
+            _input1.Font = new Font(Font.FontFamily, 16f, FontStyle.Regular);
             _input1.TextAlign = HorizontalAlignment.Right;
             _input1.PlaceholderText = "$0.00";
             _input1.ShortcutsEnabled = true;
@@ -99,9 +143,11 @@ namespace FreightCost
 
             _label2.Text = "Length fee from C.H. Robinson";
             _label2.Dock = DockStyle.Fill;
+            _label2.Font = new Font(Font, FontStyle.Bold);
+            _label2.ForeColor = TextMuted;
 
             _input2.Dock = DockStyle.Fill;
-            _input2.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 16f, FontStyle.Regular);
+            _input2.Font = new Font(Font.FontFamily, 16f, FontStyle.Regular);
             _input2.TextAlign = HorizontalAlignment.Right;
             _input2.PlaceholderText = "$0.00";
             _input2.ShortcutsEnabled = true;
@@ -118,16 +164,20 @@ namespace FreightCost
             var optionsRow = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                ColumnCount = 2
+                ColumnCount = 2,
+                Padding = new Padding(12),
+                BackColor = CardBackground
             };
             optionsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             optionsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
 
             _optA.Text = "Length is 8' to 20' ?";
             _optA.Dock = DockStyle.Fill;
+            _optA.ForeColor = TextPrimary;
 
             _optB.Text = "Use C.H. Robinson length fee?";
             _optB.Dock = DockStyle.Fill;
+            _optB.ForeColor = TextPrimary;
             _optB.CheckedChanged += (_, __) =>
             {
                 if (_optB.Checked)
@@ -147,23 +197,25 @@ namespace FreightCost
 
             optionsRow.Controls.Add(_optA, 0, 0);
             optionsRow.Controls.Add(_optB, 1, 0);
-            left.Controls.Add(optionsRow, 0, 1);
+            left.Controls.Add(optionsRow, 0, 2);
 
             // Keypad
-            left.Controls.Add(BuildKeypad(), 0, 2);
+            left.Controls.Add(BuildKeypad(), 0, 3);
 
             // Calculate
             _calc.Text = "Calculate";
             _calc.Dock = DockStyle.Fill;
-            _calc.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 12f, FontStyle.Bold);
+            _calc.Font = new Font(Font.FontFamily, 12f, FontStyle.Bold);
+            StylePrimaryButton(_calc);
             _calc.Click += (_, __) => DoCalculate();
-            left.Controls.Add(_calc, 0, 3);
+            left.Controls.Add(_calc, 0, 4);
 
             // Bottom-left YouTube button (out of the way)
             var bottomRow = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                ColumnCount = 2
+                ColumnCount = 2,
+                BackColor = AppBackground
             };
             bottomRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 44));
             bottomRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -172,8 +224,9 @@ namespace FreightCost
             {
                 Text = "▶",
                 Dock = DockStyle.Fill,
-                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 10f, FontStyle.Regular),
+                Font = new Font(Font.FontFamily, 10f, FontStyle.Regular),
             };
+            StyleGhostButton(ytButton);
             var tip = new ToolTip();
             tip.SetToolTip(ytButton, "Open help video");
             ytButton.Click += (_, __) =>
@@ -194,15 +247,16 @@ namespace FreightCost
             };
 
             bottomRow.Controls.Add(ytButton, 0, 0);
-            bottomRow.Controls.Add(new Panel { Dock = DockStyle.Fill }, 1, 0);
-            left.Controls.Add(bottomRow, 0, 4);
+            bottomRow.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = AppBackground }, 1, 0);
+            left.Controls.Add(bottomRow, 0, 5);
 
             // ================= RIGHT (HISTORY) =================
             var right = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 RowCount = 2,
-                ColumnCount = 1
+                ColumnCount = 1,
+                BackColor = AppBackground
             };
             right.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));   // title only
             right.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // table
@@ -213,12 +267,14 @@ namespace FreightCost
                 Text = "History",
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 12f, FontStyle.Bold)
+                Font = new Font(Font.FontFamily, 12f, FontStyle.Bold),
+                ForeColor = TextPrimary
             }, 0, 0);
 
             ConfigureHistoryGrid();
             right.Controls.Add(_history, 0, 1);
 
+            ApplyModernTheme(this);
             AcceptButton = _calc;
             Shown += (_, __) => _input1.Focus();
         }
@@ -227,6 +283,7 @@ namespace FreightCost
         private void ConfigureHistoryGrid()
         {
             _history.Dock = DockStyle.Fill;
+            _history.BackgroundColor = CardBackground;
 
             // Make it feel like a read-only history table
             _history.ReadOnly = true;
@@ -244,12 +301,15 @@ namespace FreightCost
             _history.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
             _history.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
 
-            _history.BackgroundColor = SystemColors.Window;
             _history.BorderStyle = BorderStyle.FixedSingle;
-            _history.CellBorderStyle = DataGridViewCellBorderStyle.Single;
+            _history.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
             _history.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
+            _history.GridColor = BorderColor;
 
-            _history.EnableHeadersVisualStyles = true;
+            _history.EnableHeadersVisualStyles = false;
+            _history.ColumnHeadersDefaultCellStyle.BackColor = AppBackground;
+            _history.ColumnHeadersDefaultCellStyle.ForeColor = TextMuted;
+            _history.ColumnHeadersDefaultCellStyle.Font = new Font(Font, FontStyle.Bold);
 
             // Add columns: Quote | × | Fees | = | Freight Cost
             _history.Columns.Clear();
@@ -265,6 +325,11 @@ namespace FreightCost
             // Center-align EVERYTHING (headers and cells), per your request
             _history.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             _history.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            _history.DefaultCellStyle.BackColor = CardBackground;
+            _history.DefaultCellStyle.ForeColor = TextPrimary;
+            _history.DefaultCellStyle.SelectionBackColor = AccentSoft;
+            _history.DefaultCellStyle.SelectionForeColor = TextPrimary;
+            _history.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
 
             // Optional: prevent sorting arrows / clicks
             foreach (DataGridViewColumn c in _history.Columns)
@@ -369,7 +434,9 @@ namespace FreightCost
                 Dock = DockStyle.Fill,
                 ColumnCount = 4,
                 RowCount = 4,
-                Margin = new Padding(0)
+                Margin = new Padding(0),
+                Padding = new Padding(6),
+                BackColor = CardBackground
             };
 
             for (int c = 0; c < 4; c++)
@@ -393,13 +460,13 @@ namespace FreightCost
             grid.Controls.Add(MakeKeyButton("1", () => AppendToActive("1")), 0, 2);
             grid.Controls.Add(MakeKeyButton("2", () => AppendToActive("2")), 1, 2);
             grid.Controls.Add(MakeKeyButton("3", () => AppendToActive("3")), 2, 2);
-            grid.Controls.Add(new Panel { Dock = DockStyle.Fill }, 3, 2);
+            grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 3, 2);
 
             // Row 4
-            grid.Controls.Add(new Panel { Dock = DockStyle.Fill }, 0, 3);
+            grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 0, 3);
             grid.Controls.Add(MakeKeyButton("0", () => AppendToActive("0")), 1, 3);
-            grid.Controls.Add(new Panel { Dock = DockStyle.Fill }, 2, 3);
-            grid.Controls.Add(new Panel { Dock = DockStyle.Fill }, 3, 3);
+            grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 2, 3);
+            grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 3, 3);
 
             return grid;
         }
@@ -411,9 +478,9 @@ namespace FreightCost
                 Text = text,
                 Dock = DockStyle.Fill,
                 Margin = new Padding(6),
-                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 14f, FontStyle.Bold),
-                FlatStyle = FlatStyle.System
+                Font = new Font(Font.FontFamily, 14f, FontStyle.Bold)
             };
+            StyleSecondaryButton(b);
             b.Click += (_, __) => onClick();
             return b;
         }
@@ -466,24 +533,65 @@ namespace FreightCost
             tb.ContextMenuStrip = menu;
         }
 
-        private static void ApplyLightTheme(Control root)
+        private static void ApplyModernTheme(Control root)
         {
-            root.BackColor = SystemColors.Control;
-            root.ForeColor = SystemColors.ControlText;
+            root.BackColor = AppBackground;
+            root.ForeColor = TextPrimary;
 
             foreach (Control c in root.Controls)
             {
                 if (c is TextBox tb)
                 {
-                    tb.BackColor = SystemColors.Window;
-                    tb.ForeColor = SystemColors.WindowText;
+                    tb.BackColor = Color.White;
+                    tb.ForeColor = TextPrimary;
+                    tb.BorderStyle = BorderStyle.FixedSingle;
                 }
                 else if (c is DataGridView gv)
                 {
-                    gv.BackgroundColor = SystemColors.Window;
+                    gv.BackgroundColor = CardBackground;
                 }
-                ApplyLightTheme(c);
+                else if (c is Label label && label.ForeColor == SystemColors.ControlText)
+                {
+                    label.ForeColor = TextPrimary;
+                }
+                ApplyModernTheme(c);
             }
+        }
+
+        private static void StylePrimaryButton(Button button)
+        {
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 0;
+            button.BackColor = Accent;
+            button.ForeColor = Color.White;
+            button.UseVisualStyleBackColor = false;
+            button.Cursor = Cursors.Hand;
+            button.Padding = new Padding(6);
+            button.FlatAppearance.MouseOverBackColor = AccentHover;
+        }
+
+        private static void StyleSecondaryButton(Button button)
+        {
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 1;
+            button.FlatAppearance.BorderColor = BorderColor;
+            button.BackColor = Color.White;
+            button.ForeColor = TextPrimary;
+            button.UseVisualStyleBackColor = false;
+            button.Cursor = Cursors.Hand;
+            button.Padding = new Padding(4);
+            button.FlatAppearance.MouseOverBackColor = Color.FromArgb(243, 246, 252);
+        }
+
+        private static void StyleGhostButton(Button button)
+        {
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 0;
+            button.BackColor = Color.Transparent;
+            button.ForeColor = Accent;
+            button.UseVisualStyleBackColor = false;
+            button.Cursor = Cursors.Hand;
+            button.FlatAppearance.MouseOverBackColor = AccentSoft;
         }
     }
 }
