@@ -17,14 +17,14 @@ namespace FreightCost
 
     public class CalcForm : Form
     {
-        private static readonly Color AppBackground = Color.FromArgb(245, 247, 250);
-        private static readonly Color CardBackground = Color.White;
-        private static readonly Color Accent = Color.FromArgb(37, 99, 235);
-        private static readonly Color AccentHover = Color.FromArgb(29, 78, 216);
-        private static readonly Color AccentSoft = Color.FromArgb(226, 236, 255);
-        private static readonly Color TextPrimary = Color.FromArgb(28, 30, 33);
-        private static readonly Color TextMuted = Color.FromArgb(92, 101, 114);
-        private static readonly Color BorderColor = Color.FromArgb(218, 223, 230);
+        private static readonly Color AppBackground = Color.FromArgb(32, 32, 32);
+        private static readonly Color CardBackground = Color.FromArgb(45, 45, 45);
+        private static readonly Color Accent = Color.FromArgb(59, 130, 246);
+        private static readonly Color AccentHover = Color.FromArgb(37, 99, 235);
+        private static readonly Color AccentSoft = Color.FromArgb(52, 64, 86);
+        private static readonly Color TextPrimary = Color.FromArgb(240, 240, 240);
+        private static readonly Color TextMuted = Color.FromArgb(170, 170, 170);
+        private static readonly Color BorderColor = Color.FromArgb(64, 64, 64);
 
         private const string HelpVideoUrl =
             "https://www.youtube.com/watch?v=1WaV2x8GXj0&list=RD1WaV2x8GXj0&start_radio=1";
@@ -48,7 +48,7 @@ namespace FreightCost
         public CalcForm()
         {
             // ---- App Window ----
-            Text = "Freight Cost Calculator";
+            Text = "M.F. BOYS CALCULATOR";
             Font = new Font("Segoe UI", 10f, FontStyle.Regular);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -74,7 +74,7 @@ namespace FreightCost
             var left = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                RowCount = 6,
+                RowCount = 5,
                 BackColor = AppBackground
             };
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));  // header
@@ -222,7 +222,7 @@ namespace FreightCost
 
             var ytButton = new Button
             {
-                Text = "▶",
+                Text = "🔥",
                 Dock = DockStyle.Fill,
                 Font = new Font(Font.FontFamily, 10f, FontStyle.Regular),
             };
@@ -248,7 +248,8 @@ namespace FreightCost
 
             bottomRow.Controls.Add(ytButton, 0, 0);
             bottomRow.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = AppBackground }, 1, 0);
-            left.Controls.Add(bottomRow, 0, 5);
+            left.Controls.Add(bottomRow, 0, 4);
+
 
             // ================= RIGHT (HISTORY) =================
             var right = new TableLayoutPanel
@@ -307,7 +308,7 @@ namespace FreightCost
             _history.GridColor = BorderColor;
 
             _history.EnableHeadersVisualStyles = false;
-            _history.ColumnHeadersDefaultCellStyle.BackColor = AppBackground;
+            _history.ColumnHeadersDefaultCellStyle.BackColor = CardBackground;
             _history.ColumnHeadersDefaultCellStyle.ForeColor = TextMuted;
             _history.ColumnHeadersDefaultCellStyle.Font = new Font(Font, FontStyle.Bold);
 
@@ -329,7 +330,7 @@ namespace FreightCost
             _history.DefaultCellStyle.ForeColor = TextPrimary;
             _history.DefaultCellStyle.SelectionBackColor = AccentSoft;
             _history.DefaultCellStyle.SelectionForeColor = TextPrimary;
-            _history.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
+            _history.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(40, 40, 40);
 
             // Optional: prevent sorting arrows / clicks
             foreach (DataGridViewColumn c in _history.Columns)
@@ -542,7 +543,7 @@ namespace FreightCost
             {
                 if (c is TextBox tb)
                 {
-                    tb.BackColor = Color.White;
+                    tb.BackColor = CardBackground;
                     tb.ForeColor = TextPrimary;
                     tb.BorderStyle = BorderStyle.FixedSingle;
                 }
@@ -573,14 +574,13 @@ namespace FreightCost
         private static void StyleSecondaryButton(Button button)
         {
             button.FlatStyle = FlatStyle.Flat;
-            button.FlatAppearance.BorderSize = 1;
-            button.FlatAppearance.BorderColor = BorderColor;
-            button.BackColor = Color.White;
+            button.FlatAppearance.BorderSize = 0;
+            button.BackColor = CardBackground;
             button.ForeColor = TextPrimary;
             button.UseVisualStyleBackColor = false;
             button.Cursor = Cursors.Hand;
             button.Padding = new Padding(4);
-            button.FlatAppearance.MouseOverBackColor = Color.FromArgb(243, 246, 252);
+            button.FlatAppearance.MouseOverBackColor = Color.FromArgb(55, 55, 55);
         }
 
         private static void StyleGhostButton(Button button)
@@ -588,10 +588,10 @@ namespace FreightCost
             button.FlatStyle = FlatStyle.Flat;
             button.FlatAppearance.BorderSize = 0;
             button.BackColor = Color.Transparent;
-            button.ForeColor = Accent;
+            button.ForeColor = TextPrimary;
             button.UseVisualStyleBackColor = false;
             button.Cursor = Cursors.Hand;
-            button.FlatAppearance.MouseOverBackColor = AccentSoft;
+            button.FlatAppearance.MouseOverBackColor = Color.FromArgb(52, 52, 52);
         }
     }
 }
