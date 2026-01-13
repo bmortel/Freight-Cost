@@ -77,12 +77,41 @@ namespace FreightCost
                 RowCount = 5,
                 BackColor = AppBackground
             };
+            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));  // header
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 150)); // inputs
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));  // checkboxes
             left.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // keypad
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));  // calculate
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));  // bottom row (youtube)
             split.Controls.Add(left, 0, 0);
+
+            // Header
+            var header = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                BackColor = AppBackground,
+                Padding = new Padding(4, 0, 4, 0)
+            };
+            header.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+            header.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
+            var title = new Label
+            {
+                Text = "Freight Cost Calculator",
+                Dock = DockStyle.Fill,
+                Font = new Font(Font.FontFamily, 16f, FontStyle.Bold),
+                ForeColor = TextPrimary
+            };
+            var subtitle = new Label
+            {
+                Text = "Fast quotes with built‑in fees and history",
+                Dock = DockStyle.Fill,
+                Font = new Font(Font.FontFamily, 9f, FontStyle.Regular),
+                ForeColor = TextMuted
+            };
+            header.Controls.Add(title, 0, 0);
+            header.Controls.Add(subtitle, 0, 1);
+            left.Controls.Add(header, 0, 0);
 
             // Inputs area
             var inputs = new TableLayoutPanel
@@ -98,7 +127,7 @@ namespace FreightCost
             inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
             inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
             inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
-            left.Controls.Add(inputs, 0, 0);
+            left.Controls.Add(inputs, 0, 1);
 
             _label1.Text = "Quote (USD)";
             _label1.Dock = DockStyle.Fill;
@@ -168,10 +197,10 @@ namespace FreightCost
 
             optionsRow.Controls.Add(_optA, 0, 0);
             optionsRow.Controls.Add(_optB, 1, 0);
-            left.Controls.Add(optionsRow, 0, 1);
+            left.Controls.Add(optionsRow, 0, 2);
 
             // Keypad
-            left.Controls.Add(BuildKeypad(), 0, 2);
+            left.Controls.Add(BuildKeypad(), 0, 3);
 
             // Calculate
             _calc.Text = "Calculate";
@@ -179,7 +208,7 @@ namespace FreightCost
             _calc.Font = new Font(Font.FontFamily, 12f, FontStyle.Bold);
             StylePrimaryButton(_calc);
             _calc.Click += (_, __) => DoCalculate();
-            left.Controls.Add(_calc, 0, 3);
+            left.Controls.Add(_calc, 0, 4);
 
             // Bottom-left YouTube button (out of the way)
             var bottomRow = new TableLayoutPanel
@@ -220,6 +249,7 @@ namespace FreightCost
             bottomRow.Controls.Add(ytButton, 0, 0);
             bottomRow.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = AppBackground }, 1, 0);
             left.Controls.Add(bottomRow, 0, 4);
+
 
             // ================= RIGHT (HISTORY) =================
             var right = new TableLayoutPanel
