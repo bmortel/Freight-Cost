@@ -15,17 +15,22 @@ namespace Freight_Cost
         private static readonly Color TextPrimary = Color.FromArgb(240, 240, 240);
         private static readonly Color TextMuted = Color.FromArgb(170, 170, 170);
         private static readonly Color BorderColor = Color.FromArgb(64, 64, 64);
-
         private const string HelpVideoUrl =
             "https://www.youtube.com/watch?v=1WaV2x8GXj0&list=RD1WaV2x8GXj0&start_radio=1";
 
-        private readonly CultureInfo _us = CultureInfo.GetCultureInfo("en-US");
+        // Cached culture to avoid repeated lookups
+        private static readonly CultureInfo UsCulture = CultureInfo.GetCultureInfo("en-US");
 
         private readonly TextBox _input1 = new TextBox();
         private readonly TextBox _input2 = new TextBox();
+        // Non-editable output box (Freight Costs)
+        private readonly TextBox _output = new TextBox();
 
         private readonly Label _label1 = new Label();
         private readonly Label _label2 = new Label();
+
+        // Clickable history header
+        private readonly Label _historyHeader = new Label();
 
         private readonly CheckBox _optA = new CheckBox();
         private readonly CheckBox _optB = new CheckBox();
@@ -38,109 +43,105 @@ namespace Freight_Cost
         public Form1()
         {
             InitializeComponent();
+            WireupHistoryHeaderEvents();
+            WireupOtherEvents();
+        }
 
-            // ---- App Window ----
-            Text = "M.F. BOYS CALCULATOR";
-            Font = new Font("Segoe UI", 10f, FontStyle.Regular);
-            StartPosition = FormStartPosition.CenterScreen;
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            ClientSize = new Size(1000, 580);
-            BackColor = AppBackground;
-            ForeColor = TextPrimary;
+        private void WireupHistoryHeaderEvents()
+        {
+            bool historyOnRight = true;
+            bool historyVisible = true;
+            const int HistoryPanelWidth = 460;
+            const int HistoryShrinkExtra = 120;
 
-            // ---- Split: left calculator, right history ----
-            var split = new TableLayoutPanel
+            // Get references to the split panel (will be in Controls)
+            if (Controls.Count == 0) return;
+            var split = Controls[0] as TableLayoutPanel;
+            if (split == null) return;
+
+            _historyHeader.MouseUp += (_, me) =>
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                Padding = new Padding(12),
-                BackColor = AppBackground
+                if (me.Button == MouseButtons.Left)
+                {
+                    historyVisible = !historyVisible;
+                    if (historyVisible)
+                    {
+                        if (historyOnRight)
+                        {
+                            split.ColumnStyles[0].SizeType = SizeType.Absolute;
+                            split.ColumnStyles[0].Width = HistoryPanelWidth;
+                            split.ColumnStyles[1].SizeType = SizeType.Percent;
+                            split.ColumnStyles[1].Width = 100;
+                        }
+                        else
+                        {
+                            split.ColumnStyles[1].SizeType = SizeType.Absolute;
+                            split.ColumnStyles[1].Width = HistoryPanelWidth;
+                            split.ColumnStyles[0].SizeType = SizeType.Percent;
+                            split.ColumnStyles[0].Width = 100;
+                        }
+
+                        int desired = ClientSize.Width + HistoryPanelWidth + HistoryShrinkExtra;
+                        int screenMax = Screen.PrimaryScreen?.WorkingArea.Width ?? desired;
+                        ClientSize = new Size(Math.Min(desired, screenMax), ClientSize.Height);
+                    }
+                    else
+                    {
+                        if (historyOnRight)
+                        {
+                            split.ColumnStyles[1].SizeType = SizeType.Absolute;
+                            split.ColumnStyles[1].Width = 0;
+                        }
+                        else
+                        {
+                            split.ColumnStyles[0].SizeType = SizeType.Absolute;
+                            split.ColumnStyles[0].Width = 0;
+                        }
+
+                        int minWidth = 520;
+                        int newWidth = Math.Max(minWidth, ClientSize.Width - HistoryPanelWidth - HistoryShrinkExtra);
+                        ClientSize = new Size(newWidth, ClientSize.Height);
+                    }
+
+                    _historyHeader.Text = $"History {(historyVisible ? "◀" : "▶")}";
+                }
+                else if (me.Button == MouseButtons.Right)
+                {
+                    split.SuspendLayout();
+                    var leftControl = split.GetControlFromPosition(0, 0);
+                    var rightControl = split.GetControlFromPosition(1, 0);
+                    split.Controls.Remove(leftControl);
+                    split.Controls.Remove(rightControl);
+
+                    if (historyOnRight)
+                    {
+                        split.ColumnStyles[0] = new ColumnStyle(SizeType.Percent, 100);
+                        split.ColumnStyles[1] = new ColumnStyle(SizeType.Absolute, HistoryPanelWidth);
+                        split.Controls.Add(rightControl, 0, 0);
+                        split.Controls.Add(leftControl, 1, 0);
+                        historyOnRight = false;
+                    }
+                    else
+                    {
+                        split.ColumnStyles[0] = new ColumnStyle(SizeType.Absolute, HistoryPanelWidth);
+                        split.ColumnStyles[1] = new ColumnStyle(SizeType.Percent, 100);
+                        split.Controls.Add(leftControl, 0, 0);
+                        split.Controls.Add(rightControl, 1, 0);
+                        historyOnRight = true;
+                    }
+
+                    _historyHeader.Text = $"History {(historyVisible ? "◀" : "▶")}";
+                    split.ResumeLayout();
+                }
             };
-            split.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 460));
-            split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            Controls.Add(split);
 
-            // ================= LEFT =================
-            var left = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                RowCount = 5,
-                BackColor = AppBackground
-            };
-            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 150)); // inputs
-            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 60));  // checkboxes
-            left.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // keypad
-            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));  // calculate
-            left.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));  // bottom row (youtube)
-            split.Controls.Add(left, 0, 0);
+            _historyHeader.MouseEnter += (_, __) => _historyHeader.ForeColor = Accent;
+            _historyHeader.MouseLeave += (_, __) => _historyHeader.ForeColor = TextPrimary;
+        }
 
-            // Inputs area
-            var inputs = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                RowCount = 4,
-                ColumnCount = 1,
-                Padding = new Padding(12),
-                BackColor = CardBackground,
-                Margin = new Padding(0, 0, 0, 12)
-            };
-            inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
-            inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
-            inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
-            inputs.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
-            left.Controls.Add(inputs, 0, 0);
-
-            _label1.Text = "Quote (USD)";
-            _label1.Dock = DockStyle.Fill;
-            _label1.Font = new Font(Font, FontStyle.Bold);
-            _label1.ForeColor = TextMuted;
-
-            _input1.Dock = DockStyle.Fill;
-            _input1.Font = new Font(Font.FontFamily, 16f, FontStyle.Regular);
-            _input1.TextAlign = HorizontalAlignment.Right;
-            _input1.PlaceholderText = "$0.00";
-            _input1.ShortcutsEnabled = true;
-            AddRightClickMenu(_input1);
-
-            _label2.Text = "Length fee from C.H. Robinson";
-            _label2.Dock = DockStyle.Fill;
-            _label2.Font = new Font(Font, FontStyle.Bold);
-            _label2.ForeColor = TextMuted;
-
-            _input2.Dock = DockStyle.Fill;
-            _input2.Font = new Font(Font.FontFamily, 16f, FontStyle.Regular);
-            _input2.TextAlign = HorizontalAlignment.Right;
-            _input2.PlaceholderText = "$0.00";
-            _input2.ShortcutsEnabled = true;
-            AddRightClickMenu(_input2);
-
-            inputs.Controls.Add(_label1, 0, 0);
-            inputs.Controls.Add(_input1, 0, 1);
-            inputs.Controls.Add(_label2, 0, 2);
-            inputs.Controls.Add(_input2, 0, 3);
-
-            SetSecondInputVisible(false);
-
-            // Checkboxes row
-            var optionsRow = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                Padding = new Padding(12),
-                BackColor = CardBackground
-            };
-            optionsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            optionsRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-
-            _optA.Text = "Length is 8' to 20' ?";
-            _optA.Dock = DockStyle.Fill;
-            _optA.ForeColor = TextPrimary;
-
-            _optB.Text = "Use C.H. Robinson length fee?";
-            _optB.Dock = DockStyle.Fill;
-            _optB.ForeColor = TextPrimary;
+        private void WireupOtherEvents()
+        {
+            // Option B checkbox changed
             _optB.CheckedChanged += (_, __) =>
             {
                 if (_optB.Checked)
@@ -158,87 +159,32 @@ namespace Freight_Cost
                 }
             };
 
-            optionsRow.Controls.Add(_optA, 0, 0);
-            optionsRow.Controls.Add(_optB, 1, 0);
-            left.Controls.Add(optionsRow, 0, 1);
-
-            // Keypad
-            left.Controls.Add(BuildKeypad(), 0, 2);
-
-            // Calculate
-            _calc.Text = "Calculate";
-            _calc.Dock = DockStyle.Fill;
-            _calc.Font = new Font(Font.FontFamily, 12f, FontStyle.Bold);
-            StylePrimaryButton(_calc);
+            // Calculate button
             _calc.Click += (_, __) => DoCalculate();
-            left.Controls.Add(_calc, 0, 3);
 
-            // Bottom-left YouTube button (out of the way)
-            var bottomRow = new TableLayoutPanel
+            // YouTube button - find it in the form controls
+            var bottomRow = Controls[0] is TableLayoutPanel split ? split.GetControlFromPosition(0, 4) as TableLayoutPanel : null;
+            if (bottomRow?.Controls.Count > 0 && bottomRow.Controls[0] is Button ytButton)
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                BackColor = AppBackground
-            };
-            bottomRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 44));
-            bottomRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-
-            var ytButton = new Button
-            {
-                Text = "🔥",
-                Dock = DockStyle.Fill,
-                Font = new Font(Font.FontFamily, 10f, FontStyle.Regular),
-            };
-            StyleGhostButton(ytButton);
-            var tip = new ToolTip();
-            tip.SetToolTip(ytButton, "Open help video (YouTube)");
-            ytButton.Click += (_, __) =>
-            {
-                try
+                ytButton.Click += (_, __) =>
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    try
                     {
-                        FileName = HelpVideoUrl,
-                        UseShellExecute = true
-                    });
-                }
-                catch
-                {
-                    MessageBox.Show("Unable to open the video link.", "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            };
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = HelpVideoUrl,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Unable to open the video link.", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                };
+            }
 
-            bottomRow.Controls.Add(ytButton, 0, 0);
-            bottomRow.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = AppBackground }, 1, 0);
-            left.Controls.Add(bottomRow, 0, 4);
-
-            // ================= RIGHT (HISTORY) =================
-            var right = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                RowCount = 2,
-                ColumnCount = 1,
-                BackColor = AppBackground
-            };
-            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));   // title only
-            right.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // table
-            split.Controls.Add(right, 1, 0);
-
-            right.Controls.Add(new Label
-            {
-                Text = "History",
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Font = new Font(Font.FontFamily, 12f, FontStyle.Bold),
-                ForeColor = TextPrimary
-            }, 0, 0);
-
-            ConfigureHistoryGrid();
-            right.Controls.Add(_history, 0, 1);
-
-            ApplyModernTheme(this);
-            AcceptButton = _calc;
+            // Focus on load
             Shown += (_, __) => _input1.Focus();
         }
 
@@ -274,7 +220,7 @@ namespace Freight_Cost
             _history.ColumnHeadersDefaultCellStyle.ForeColor = TextMuted;
             _history.ColumnHeadersDefaultCellStyle.Font = new Font(Font, FontStyle.Bold);
 
-            // Add columns: Quote | × | Fees | = | Freight Cost
+            // Add columns: Quote | × | Fees | = | Freight Cost | Remove
             _history.Columns.Clear();
 
             var colQuote = new DataGridViewTextBoxColumn { Name = "Quote", HeaderText = "Quote", Width = 150 };
@@ -282,8 +228,9 @@ namespace Freight_Cost
             var colFees = new DataGridViewTextBoxColumn { Name = "Fees", HeaderText = "Fees", Width = 150 };
             var colEq = new DataGridViewTextBoxColumn { Name = "Eq", HeaderText = "=", Width = 25 };
             var colFreight = new DataGridViewTextBoxColumn { Name = "Freight", HeaderText = "Freight Cost", Width = 150 };
+            var colRemove = new DataGridViewButtonColumn { Name = "Remove", HeaderText = "", Width = 40, Text = "X", UseColumnTextForButtonValue = true };
 
-            _history.Columns.AddRange(colQuote, colMul, colFees, colEq, colFreight);
+            _history.Columns.AddRange(colQuote, colMul, colFees, colEq, colFreight, colRemove);
 
             // Center-align EVERYTHING (headers and cells), per your request
             _history.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
@@ -297,6 +244,24 @@ namespace Freight_Cost
             // Optional: prevent sorting arrows / clicks
             foreach (DataGridViewColumn c in _history.Columns)
                 c.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+            _history.CellClick -= HistoryCellClick;
+            _history.CellClick += HistoryCellClick;
+        }
+
+        private void HistoryCellClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            var grid = _history;
+            if (grid.Columns[e.ColumnIndex].Name == "Remove")
+            {
+                var quote = grid.Rows[e.RowIndex].Cells[0].Value?.ToString() ?? "this entry";
+                var res = MessageBox.Show($"Remove {quote}?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (res == DialogResult.Yes)
+                {
+                    grid.Rows.RemoveAt(e.RowIndex);
+                }
+            }
         }
 
         // ========= CALCULATION / HISTORY =========
@@ -332,29 +297,37 @@ namespace Freight_Cost
             decimal freight = RoundCents((quote * multiplier) + flatFee);
 
             // Fees column: show multiplier + flat fee used
-            string feesDisplay = $"{multiplier.ToString("0.##", _us)} + {flatFee.ToString("C", _us)}";
+            string feesDisplay = $"{multiplier.ToString("0.##", UsCulture)} + {flatFee.ToString("C", UsCulture)}";
 
-            // Add row at TOP (newest first)
+            // Add row at TOP (newest first) -- suspend layout to avoid unnecessary redraws
+            _history.SuspendLayout();
             _history.Rows.Insert(0,
-                quote.ToString("C", _us),
+                quote.ToString("C", UsCulture),
                 "×",
                 feesDisplay,
                 "=",
-                freight.ToString("C", _us)
+                freight.ToString("C", UsCulture),
+                "X"
             );
+            _history.ResumeLayout();
+
+            // Show result in output box
+            _output.Text = freight.ToString("C", UsCulture);
+            _output.SelectionStart = _output.TextLength;
         }
 
-        private static decimal GetMultiplier(decimal quote)
+        // Exposed for potential external use; these are cheap but made internal for testing/benchmarking
+        internal static decimal GetMultiplier(decimal quote)
         {
             if (quote < 250m) return 1.5m;
             if (quote < 1000m) return 1.33m;
             return 1.2m;
         }
 
-        private static decimal RoundCents(decimal v) =>
+        internal static decimal RoundCents(decimal v) =>
             Math.Round(v, 2, MidpointRounding.AwayFromZero);
 
-        private static bool TryParseUsd(string text, out decimal value, out string error)
+        internal static bool TryParseUsd(string text, out decimal value, out string error)
         {
             error = "";
             value = 0m;
@@ -366,8 +339,7 @@ namespace Freight_Cost
                 return false;
             }
 
-            var us = CultureInfo.GetCultureInfo("en-US");
-            if (!decimal.TryParse(trimmed, NumberStyles.Currency, us, out value))
+            if (!decimal.TryParse(trimmed, NumberStyles.Currency, UsCulture, out value))
             {
                 error = "That doesn't look like a valid USD amount.\nExamples: 12.34, $12.34, $1,234.56";
                 return false;
@@ -380,6 +352,101 @@ namespace Freight_Cost
             }
 
             return true;
+        }
+
+        // ========= INPUT FILTERS / PASTE HANDLING =========
+        private static string FilterCurrencyInput(string input, string existing)
+        {
+            if (string.IsNullOrEmpty(input)) return string.Empty;
+            var sb = new System.Text.StringBuilder();
+            bool existingDot = (existing ?? "").Contains('.');
+            foreach (var ch in input)
+            {
+                if (char.IsDigit(ch)) sb.Append(ch);
+                else if (ch == '.' && !existingDot && !sb.ToString().Contains('.')) sb.Append('.');
+                else if (ch == ',') sb.Append(ch);
+                else if (ch == '$') sb.Append(ch);
+                // ignore everything else
+            }
+            return sb.ToString();
+        }
+
+        private void AttachInputFilters(TextBox tb)
+        {
+            tb.KeyPress += (s, e) =>
+            {
+                if (char.IsControl(e.KeyChar)) return; // allow backspace, etc.
+                char c = e.KeyChar;
+                if (char.IsDigit(c) || c == ',' || c == '$') return;
+                if (c == '.')
+                {
+                    // allow only one dot
+                    var current = tb.Text;
+                    if (current.Contains('.')) e.Handled = true;
+                    return;
+                }
+                // otherwise ignore
+                e.Handled = true;
+            };
+
+            tb.KeyDown += (s, e) =>
+            {
+                if (e.Control && e.KeyCode == Keys.V)
+                {
+                    // filtered paste
+                    if (Clipboard.ContainsText())
+                    {
+                        var clip = Clipboard.GetText();
+                        var filtered = FilterCurrencyInput(clip, tb.Text);
+                        if (!string.IsNullOrEmpty(filtered))
+                        {
+                            // insert filtered text at selection
+                            var selStart = tb.SelectionStart;
+                            var selLen = tb.SelectionLength;
+                            var txt = tb.Text;
+                            txt = txt.Remove(selStart, selLen);
+                            txt = txt.Insert(selStart, filtered);
+                            tb.Text = txt;
+                            tb.SelectionStart = selStart + filtered.Length;
+                        }
+                    }
+                    e.SuppressKeyPress = true;
+                }
+            };
+
+            // replace context menu Paste action created in AddRightClickMenu by hooking the Paste menu later.
+        }
+
+        private static void AddRightClickMenu(TextBox tb)
+        {
+            var menu = new ContextMenuStrip();
+            menu.Items.Add("Cut", null, (_, __) => tb.Cut());
+            menu.Items.Add("Copy", null, (_, __) => tb.Copy());
+            menu.Items.Add("Paste", null, (_, __) =>
+            {
+                try
+                {
+                    if (Clipboard.ContainsText())
+                    {
+                        var clip = Clipboard.GetText();
+                        var filtered = FilterCurrencyInput(clip, tb.Text);
+                        if (!string.IsNullOrEmpty(filtered))
+                        {
+                            var selStart = tb.SelectionStart;
+                            var selLen = tb.SelectionLength;
+                            var txt = tb.Text;
+                            txt = txt.Remove(selStart, selLen);
+                            txt = txt.Insert(selStart, filtered);
+                            tb.Text = txt;
+                            tb.SelectionStart = selStart + filtered.Length;
+                        }
+                    }
+                }
+                catch { }
+            });
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add("Select All", null, (_, __) => tb.SelectAll());
+            tb.ContextMenuStrip = menu;
         }
 
         // ========= UI HELPERS =========
@@ -411,7 +478,7 @@ namespace Freight_Cost
             grid.Controls.Add(MakeKeyButton("7", () => AppendToActive("7")), 0, 0);
             grid.Controls.Add(MakeKeyButton("8", () => AppendToActive("8")), 1, 0);
             grid.Controls.Add(MakeKeyButton("9", () => AppendToActive("9")), 2, 0);
-            grid.Controls.Add(MakeKeyButton("⌫", BackspaceActive), 3, 0);
+            grid.Controls.Add(MakeKeyButton("CE", BackspaceActive), 3, 0);
 
             // Row 2
             grid.Controls.Add(MakeKeyButton("4", () => AppendToActive("4")), 0, 1);
@@ -458,8 +525,8 @@ namespace Freight_Cost
         {
             var tb = GetActiveInput();
             tb.AppendText(s);
-            tb.Focus();
-            tb.SelectionStart = tb.TextLength;
+            if (!tb.Focused) tb.Focus();
+            if (tb.SelectionStart != tb.TextLength) tb.SelectionStart = tb.TextLength;
         }
 
         private void AppendDecimal()
@@ -470,31 +537,50 @@ namespace Freight_Cost
                 if (tb.Text.Length == 0) tb.Text = "0.";
                 else tb.AppendText(".");
             }
-            tb.Focus();
-            tb.SelectionStart = tb.TextLength;
+            if (!tb.Focused) tb.Focus();
+            if (tb.SelectionStart != tb.TextLength) tb.SelectionStart = tb.TextLength;
         }
 
         private void BackspaceActive()
         {
             var tb = GetActiveInput();
-            if (tb.TextLength > 0)
-            {
-                tb.Text = tb.Text.Substring(0, tb.TextLength - 1);
-                tb.SelectionStart = tb.TextLength;
-            }
-            tb.Focus();
+            // CE behavior: clear the current entry
+            tb.Text = string.Empty;
+            if (tb.SelectionStart != tb.TextLength) tb.SelectionStart = tb.TextLength;
+            if (!tb.Focused) tb.Focus();
         }
 
-        private static void AddRightClickMenu(TextBox tb)
-        {
-            var menu = new ContextMenuStrip();
-            menu.Items.Add("Cut", null, (_, __) => tb.Cut());
-            menu.Items.Add("Copy", null, (_, __) => tb.Copy());
-            menu.Items.Add("Paste", null, (_, __) => tb.Paste());
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Select All", null, (_, __) => tb.SelectAll());
-            tb.ContextMenuStrip = menu;
-        }
+        //private static void AddRightClickMenu(TextBox tb)
+        //{
+        //    var menu = new ContextMenuStrip();
+        //    menu.Items.Add("Cut", null, (_, __) => tb.Cut());
+        //    menu.Items.Add("Copy", null, (_, __) => tb.Copy());
+        //    menu.Items.Add("Paste", null, (_, __) =>
+        //    {
+        //        try
+        //        {
+        //            if (Clipboard.ContainsText())
+        //            {
+        //                var clip = Clipboard.GetText();
+        //                var filtered = FilterCurrencyInput(clip, tb.Text);
+        //                if (!string.IsNullOrEmpty(filtered))
+        //                {
+        //                    var selStart = tb.SelectionStart;
+        //                    var selLen = tb.SelectionLength;
+        //                    var txt = tb.Text;
+        //                    txt = txt.Remove(selStart, selLen);
+        //                    txt = txt.Insert(selStart, filtered);
+        //                    tb.Text = txt;
+        //                    tb.SelectionStart = selStart + filtered.Length;
+        //                }
+        //            }
+        //        }
+        //        catch { }
+        //    });
+        //    menu.Items.Add(new ToolStripSeparator());
+        //    menu.Items.Add("Select All", null, (_, __) => tb.SelectAll());
+        //    tb.ContextMenuStrip = menu;
+        //}
 
         private static void ApplyModernTheme(Control root)
         {
@@ -554,6 +640,16 @@ namespace Freight_Cost
             button.UseVisualStyleBackColor = false;
             button.Cursor = Cursors.Hand;
             button.FlatAppearance.MouseOverBackColor = Color.FromArgb(52, 52, 52);
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void headerPanel_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }
