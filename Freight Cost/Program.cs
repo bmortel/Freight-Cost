@@ -8,8 +8,8 @@ namespace Freight_Cost
         [STAThread]
         static void Main()
         {
+            ApplicationConfiguration.Initialize();
             Application.Run(new Form1());
         }
-
     }
 }
