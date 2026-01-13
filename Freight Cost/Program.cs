@@ -228,7 +228,7 @@ namespace FreightCost
             };
             StyleGhostButton(ytButton);
             var tip = new ToolTip();
-            tip.SetToolTip(ytButton, "Open help video");
+            tip.SetToolTip(ytButton, "Open help video (YouTube)");
             ytButton.Click += (_, __) =>
             {
                 try
