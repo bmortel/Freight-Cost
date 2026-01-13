@@ -85,34 +85,6 @@ namespace FreightCost
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));  // bottom row (youtube)
             split.Controls.Add(left, 0, 0);
 
-            // Header
-            var header = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                BackColor = AppBackground,
-                Padding = new Padding(4, 0, 4, 0)
-            };
-            header.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-            header.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
-            var title = new Label
-            {
-                Text = "Freight Cost Calculator",
-                Dock = DockStyle.Fill,
-                Font = new Font(Font.FontFamily, 16f, FontStyle.Bold),
-                ForeColor = TextPrimary
-            };
-            var subtitle = new Label
-            {
-                Text = "Fast quotes with built‑in fees and history",
-                Dock = DockStyle.Fill,
-                Font = new Font(Font.FontFamily, 9f, FontStyle.Regular),
-                ForeColor = TextMuted
-            };
-            header.Controls.Add(title, 0, 0);
-            header.Controls.Add(subtitle, 0, 1);
-            left.Controls.Add(header, 0, 0);
-
             // Inputs area
             var inputs = new TableLayoutPanel
             {
