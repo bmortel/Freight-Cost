@@ -36,6 +36,9 @@ namespace Freight_Cost
         // Cached culture used for USD parsing/formatting (avoids repeated lookups)
         private static readonly CultureInfo UsCulture = CultureInfo.GetCultureInfo("en-US");
 
+        private TextBox _activeInput;
+
+
         // ============================================================
         // CONSTRUCTOR
         // ============================================================
@@ -136,11 +139,13 @@ namespace Freight_Cost
 
 
             menu.Items.Add(fileMenu);
-            menu.Items.Add(helpMenu);
+            menu.Items.Add(helpMenu); 
 
             this.MainMenuStrip = menu;
             this.Controls.Add(menu);
             menu.Dock = DockStyle.Top;
+            _activeInput = _input1;
+
         }
 
 
@@ -272,6 +277,13 @@ namespace Freight_Cost
         // ============================================================
         private void WireupOtherEvents()
         {
+            _input1.Enter += (_, __) => _activeInput = _input1;
+            _input2.Enter += (_, __) => _activeInput = _input2;
+
+            // Optional: also handle mouse clicks
+            _input1.MouseDown += (_, __) => _activeInput = _input1;
+            _input2.MouseDown += (_, __) => _activeInput = _input2;
+
             // Option B toggles the second input box
             _optB.CheckedChanged += (_, __) =>
             {
@@ -860,9 +872,12 @@ namespace Freight_Cost
         // Decide which textbox keypad should type into
         private TextBox GetActiveInput()
         {
-            if (_input2.Visible && _input2.Focused) return _input2;
-            return _input1;
+            if (_activeInput != null && _activeInput.Visible)
+                return _activeInput;
+
+            return _input1; // fallback
         }
+
 
         /// <summary>
         /// Inserts characters into the active textbox, then normalizes the full text.
