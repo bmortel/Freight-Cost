@@ -7,6 +7,25 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>favicon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="1000_F_229633543_61dvMWKJbtITQEMmRY98RlbpF0OQoAsk.jpg" />
+    <None Remove="favicon %282%29.ico" />
+    <None Remove="favicon.ico" />
+    <None Remove="Properties\rof.png" />
+    <None Remove="rof.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="favicon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="RAMBO.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>
