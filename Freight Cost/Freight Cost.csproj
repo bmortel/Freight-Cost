@@ -2,30 +2,34 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <RootNamespace>Freight_Cost</RootNamespace>
-    <Nullable>enable</Nullable>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- App icon -->
     <ApplicationIcon>favicon.ico</ApplicationIcon>
+
+    <!-- Single-file publish settings -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="1000_F_229633543_61dvMWKJbtITQEMmRY98RlbpF0OQoAsk.jpg" />
-    <None Remove="favicon %282%29.ico" />
-    <None Remove="favicon.ico" />
-    <None Remove="Properties\rof.png" />
-    <None Remove="rof.png" />
   </ItemGroup>
 
+  <!-- Keep the ico in the project (doesn't need to be Content) -->
   <ItemGroup>
     <Content Include="favicon.ico" />
   </ItemGroup>
 
+  <!-- If you want RAMBO.png to be inside the exe, DO NOT copy it out -->
   <ItemGroup>
-    <None Update="RAMBO.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="RAMBO.png" />
   </ItemGroup>
 
 </Project>

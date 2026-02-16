@@ -338,7 +338,17 @@ namespace Freight_Cost
             tip.SetToolTip(_ytButton, "Open help video (YouTube)");
 
 
-            _rambo.Image = Image.FromFile("RAMBO.png");
+            try
+            {
+                if (System.IO.File.Exists("RAMgBO.png"))
+                {
+                    _rambo.Image = Image.FromFile("RAMBO.png");
+                }
+            }
+            catch
+            {
+                _rambo.Image = null; // or a default icon if you have one
+            }
             _rambo.Dock = DockStyle.None;
             _rambo.SizeMode = PictureBoxSizeMode.Zoom;
             _rambo.BackColor = AppBackground;

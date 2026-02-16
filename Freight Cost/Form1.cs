@@ -52,8 +52,8 @@ namespace Freight_Cost
             this.FormClosing += (_, e) =>
             {
                 var result = MessageBox.Show(
-                    "Exit the Freight Cost Calculator MFer?",
-                    "Confirm Exit",
+                    "Exit the Calculator MFer?",
+                    "Got soft hands brother?",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question
                 );
