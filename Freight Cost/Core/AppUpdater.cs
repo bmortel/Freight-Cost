@@ -40,12 +40,30 @@ internal static class AppUpdater
         internal UpdateAsset? Asset { get; init; }
     }
 
+    private static Version GetCurrentAppVersion()
+    {
+        var entry = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+
+        // Prefer InformationalVersion (maps to <Version> in csproj)
+        var info = entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        var infoV = ParseVersion(info);
+        if (infoV != null) return infoV;
+
+        // Fallback to AssemblyVersion (maps to <AssemblyVersion>)
+        var asmV = entry.GetName().Version;
+        if (asmV != null) return asmV;
+
+        // Last resort
+        return new Version(0, 0, 0, 0);
+    }
+
+
     /// <summary>
     /// Compares current app version against latest GitHub release.
     /// </summary>
     internal static async Task<UpdateCheckResult> CheckForUpdateAsync(CancellationToken cancellationToken = default)
     {
-        var currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0, 0);
+        var currentVersion = GetCurrentAppVersion();
         var latestRelease = await GetLatestReleaseAsync(cancellationToken).ConfigureAwait(false);
 
         if (latestRelease.Version is null || latestRelease.Version <= currentVersion)

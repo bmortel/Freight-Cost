@@ -1,7 +1,7 @@
 using Freight_Cost.UI;
 using System.Diagnostics;
-using System.Drawing;
-using System.Windows.Forms;
+using System.Text.Json;
+
 
 namespace Freight_Cost;
 
@@ -15,7 +15,7 @@ public sealed class AboutForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(460, 560);
+        ClientSize = new Size(460, 590);
         BackColor = Theme.AppBackground;
         Font = new Font("Segoe UI", 10f);
 
@@ -28,7 +28,7 @@ public sealed class AboutForm : Form
             BackColor = Theme.AppBackground
         };
 
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 80));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
         Controls.Add(root);
@@ -51,14 +51,46 @@ public sealed class AboutForm : Form
 
         var version = new Label
         {
-            Text = "Version 1.0",
+            // Application.ProductVersion pulls from your assembly/app version
+            Text = $"Version {Application.ProductVersion}",
             Dock = DockStyle.Top,
             Height = 22,
             ForeColor = Theme.TextMuted
         };
 
+        var latest = new Label
+        {
+            Text = "Latest: checking...",
+            Dock = DockStyle.Top,
+            Height = 22,
+            ForeColor = Theme.TextMuted
+        };
+
+        Shown += async (_, __) =>
+        {
+            try
+            {
+                var tag = await GetLatestGitHubReleaseTagAsync();
+
+                if (!string.IsNullOrWhiteSpace(tag))
+                    latest.Text = $"Latest: {tag}";
+                else
+                    latest.Text = "Latest: (unknown)";
+            }
+            catch
+            {
+                // If work PC blocks GitHub or no internet, don't crash the About form
+                latest.Text = "Latest: (offline)";
+            }
+        };
+
+
+
+
+        headerCard.Controls.Add(latest);
         headerCard.Controls.Add(version);
         headerCard.Controls.Add(title);
+
         root.Controls.Add(headerCard, 0, 0);
 
         var bodyCard = new Panel
@@ -127,8 +159,11 @@ public sealed class AboutForm : Form
         {
             Text = "OK",
             Width = 90,
-            Height = 30
+            Height = 40
+
         };
+
+
 
         Theme.StylePrimaryButton(okButton);
         okButton.Click += (_, _) => Close();
@@ -138,4 +173,25 @@ public sealed class AboutForm : Form
 
         AcceptButton = okButton;
     }
+    private static async Task<string?> GetLatestGitHubReleaseTagAsync()
+    {
+        // GitHub API endpoint for latest release
+        const string url = "https://api.github.com/repos/bmortel/Freight-Cost/releases/latest";
+
+        using var http = new HttpClient();
+
+        // GitHub requires a User-Agent header or it can reject requests
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("Freight-Cost-App");
+
+        // Download JSON
+        var json = await http.GetStringAsync(url);
+
+        // Parse only what we need: tag_name (example: "v1.2.0")
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.TryGetProperty("tag_name", out var tag))
+            return tag.GetString();
+
+        return null;
+    }
+
 }

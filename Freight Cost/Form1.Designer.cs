@@ -73,7 +73,7 @@ partial class Form1
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = true;
-        ClientSize = new Size(1000, 590);
+        ClientSize = new Size(1000, 690);
         BackColor = Theme.AppBackground;
         ForeColor = Theme.TextPrimary;
         AutoScaleMode = AutoScaleMode.Font;
@@ -83,7 +83,7 @@ partial class Form1
         _split.Padding = new Padding(12);
         _split.BackColor = Theme.AppBackground;
         _split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        _split.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 460));
+        _split.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 525));
         Controls.Add(_split);
 
         _left.Dock = DockStyle.Fill;
@@ -140,13 +140,13 @@ partial class Form1
         _outputCaption.TextAlign = ContentAlignment.MiddleLeft;
         _outputCaption.Margin = new Padding(0, 10, 8, 0);
 
-        _outputValue.Text = "$0.00";
-        _outputValue.Dock = DockStyle.Fill;
-        _outputValue.Font = new Font(Font.FontFamily, 16f, FontStyle.Bold);
+        _outputValue.Text = "";
+        _outputValue.Dock = DockStyle.None;
+        _outputValue.Font = new Font(Font.FontFamily, 14f, FontStyle.Bold);
         _outputValue.TextAlign = ContentAlignment.MiddleRight;
         _outputValue.BackColor = Theme.CardBackground;
         _outputValue.ForeColor = Theme.TextPrimary;
-        _outputValue.Margin = new Padding(0, 8, 0, 0);
+        _outputValue.Margin = new Padding(0, 8, 0, 8);
 
         _inputs.Controls.Add(_label1, 0, 0);
         _inputs.Controls.Add(_input1, 0, 1);
