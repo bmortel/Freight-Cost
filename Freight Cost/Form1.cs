@@ -15,6 +15,7 @@ namespace Freight_Cost;
 public partial class Form1 : Form
 {
     private const string HelpVideoUrl = "https://www.youtube.com/watch?v=1WaV2x8GXj0&list=RD1WaV2x8GXj0&start_radio=1";
+    private const string ReleasesPageUrl = "https://github.com/bmortel/Freight-Cost/releases";
 
     private TextBox? _activeInput;
     private bool _isCheckingForUpdates;
@@ -138,7 +139,7 @@ public partial class Form1 : Form
         {
             var result = await AppUpdater.CheckForUpdateAsync();
 
-            if (!result.HasUpdate || result.Asset is null)
+            if (!result.HasUpdate)
             {
                 if (userInitiated)
                 {
@@ -153,6 +154,33 @@ public partial class Form1 : Form
             }
 
             var latestTag = result.LatestTag ?? result.LatestVersion?.ToString() ?? "latest";
+
+            // Tag-only updates can happen when GitHub has tags but no published release assets.
+            if (result.Asset is null)
+            {
+                if (!userInitiated)
+                {
+                    return;
+                }
+
+                var openReleases = MessageBox.Show(
+                    $"A newer version ({latestTag}) exists, but no downloadable release asset was found.\n\nOpen the releases page?",
+                    "Update Available",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Information);
+
+                if (openReleases == DialogResult.Yes)
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = ReleasesPageUrl,
+                        UseShellExecute = true
+                    });
+                }
+
+                return;
+            }
+
             var prompt = MessageBox.Show(
                 $"A new version ({latestTag}) is available.\n\nDo you want to download {result.Asset.Name}?",
                 "Update Available",
@@ -282,8 +310,7 @@ public partial class Form1 : Form
             freightCost.ToString("C", CurrencyInput.UsCulture),
             "X");
 
-        _output.Text = freightCost.ToString("C", CurrencyInput.UsCulture);
-        _output.SelectionStart = _output.TextLength;
+        _outputValue.Text = freightCost.ToString("C", CurrencyInput.UsCulture);
     }
 
     /// <summary>
@@ -344,7 +371,7 @@ public partial class Form1 : Form
             Text = text,
             Dock = DockStyle.Fill,
             Margin = new Padding(6),
-            Font = new Font(Font.FontFamily, 14f, FontStyle.Bold)
+            Font = new Font(Font.FontFamily, 12f, FontStyle.Bold)
         };
 
         Theme.StyleSecondaryButton(button);

@@ -11,7 +11,8 @@ partial class Form1
 
     private TextBox _input1 = null!;
     private TextBox _input2 = null!;
-    private TextBox _output = null!;
+    private Label _outputCaption = null!;
+    private Label _outputValue = null!;
     private Label _label1 = null!;
     private Label _label2 = null!;
     private Label _historyTitle = null!;
@@ -46,7 +47,8 @@ partial class Form1
 
         _input1 = new TextBox();
         _input2 = new TextBox();
-        _output = new TextBox();
+        _outputCaption = new Label();
+        _outputValue = new Label();
         _label1 = new Label();
         _label2 = new Label();
         _historyTitle = new Label();
@@ -66,7 +68,7 @@ partial class Form1
 
         SuspendLayout();
 
-        Text = "Freight Cost";
+        Text = "M.F. BOYS CALCULATOR";
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -131,11 +133,20 @@ partial class Form1
         AddRightClickMenu(_input2);
         AttachInputFilters(_input2);
 
-        _output.Dock = DockStyle.Fill;
-        _output.Font = new Font(Font.FontFamily, 16f, FontStyle.Bold);
-        _output.TextAlign = HorizontalAlignment.Right;
-        _output.ReadOnly = true;
-        _output.TabStop = false;
+        _outputCaption.Text = "Freight Cost:";
+        _outputCaption.Dock = DockStyle.Left;
+        _outputCaption.AutoSize = true;
+        _outputCaption.Font = new Font(Font, FontStyle.Bold);
+        _outputCaption.TextAlign = ContentAlignment.MiddleLeft;
+        _outputCaption.Margin = new Padding(0, 10, 8, 0);
+
+        _outputValue.Text = "$0.00";
+        _outputValue.Dock = DockStyle.Fill;
+        _outputValue.Font = new Font(Font.FontFamily, 16f, FontStyle.Bold);
+        _outputValue.TextAlign = ContentAlignment.MiddleRight;
+        _outputValue.BackColor = Theme.CardBackground;
+        _outputValue.ForeColor = Theme.TextPrimary;
+        _outputValue.Margin = new Padding(0, 8, 0, 0);
 
         _inputs.Controls.Add(_label1, 0, 0);
         _inputs.Controls.Add(_input1, 0, 1);
@@ -165,7 +176,7 @@ partial class Form1
 
         _calc.Text = "Calculate";
         _calc.Dock = DockStyle.Fill;
-        _calc.Font = new Font(Font.FontFamily, 12f, FontStyle.Bold);
+        _calc.Font = new Font(Font.FontFamily, 11f, FontStyle.Bold);
         Theme.StylePrimaryButton(_calc);
         _left.Controls.Add(_calc, 0, 3);
 
@@ -191,8 +202,19 @@ partial class Form1
         _rambo.Margin = new Padding(5);
         _rambo.Image = Properties.Resources.RAMBO;
 
+        var outputContainer = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            BackColor = Theme.AppBackground,
+            Margin = new Padding(0)
+        };
+        outputContainer.Controls.Add(_outputCaption);
+        outputContainer.Controls.Add(_outputValue);
+
         _bottomRow.Controls.Add(_ytButton, 0, 0);
-        _bottomRow.Controls.Add(_output, 1, 0);
+        _bottomRow.Controls.Add(outputContainer, 1, 0);
         _bottomRow.Controls.Add(_rambo, 2, 0);
         _left.Controls.Add(_bottomRow, 0, 4);
 

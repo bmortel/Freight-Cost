@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
@@ -95,6 +96,14 @@ internal static class AppUpdater
     {
         using var response = await HttpClient.GetAsync($"repos/{Owner}/{Repository}/releases/latest", cancellationToken)
             .ConfigureAwait(false);
+
+        // GitHub returns 404 for this endpoint when a repository has no published releases yet.
+        // In that case, fall back to the newest git tag so update checks still work.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return await GetLatestFromTagsAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         response.EnsureSuccessStatusCode();
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
@@ -130,6 +139,34 @@ internal static class AppUpdater
             Tag = tag,
             Version = version,
             Assets = assets
+        };
+    }
+
+    private static async Task<LatestRelease> GetLatestFromTagsAsync(CancellationToken cancellationToken)
+    {
+        using var response = await HttpClient.GetAsync($"repos/{Owner}/{Repository}/tags?per_page=1", cancellationToken)
+            .ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        if (document.RootElement.ValueKind != JsonValueKind.Array || document.RootElement.GetArrayLength() == 0)
+        {
+            return new LatestRelease
+            {
+                Tag = string.Empty,
+                Version = null,
+                Assets = Array.Empty<UpdateAsset>()
+            };
+        }
+
+        var tag = document.RootElement[0].GetProperty("name").GetString() ?? string.Empty;
+        return new LatestRelease
+        {
+            Tag = tag,
+            Version = ParseVersion(tag),
+            Assets = Array.Empty<UpdateAsset>()
         };
     }
 

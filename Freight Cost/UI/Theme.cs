@@ -48,8 +48,9 @@ internal static class Theme
         button.ForeColor = Color.White;
         button.UseVisualStyleBackColor = false;
         button.Cursor = Cursors.Hand;
-        button.Padding = new Padding(6);
+        button.Padding = new Padding(2);
         button.FlatAppearance.MouseOverBackColor = AccentHover;
+        button.TextAlign = ContentAlignment.MiddleCenter;
     }
 
     internal static void StyleSecondaryButton(Button button)
@@ -61,8 +62,9 @@ internal static class Theme
         button.ForeColor = TextPrimary;
         button.UseVisualStyleBackColor = false;
         button.Cursor = Cursors.Hand;
-        button.Padding = new Padding(4);
+        button.Padding = new Padding(2);
         button.FlatAppearance.MouseOverBackColor = Color.FromArgb(55, 55, 55);
+        button.TextAlign = ContentAlignment.MiddleCenter;
     }
 
     internal static void StyleGhostButton(Button button)
