@@ -47,7 +47,7 @@ public partial class Form1 : Form
         Shown += async (_, _) =>
         {
             _input1.Focus();
-            await CheckForUpdatesAsync(userInitiated: false);
+            await CheckForUpdatesAsync(userInitiated: false, preferCachedResult: true);
         };
     }
 
@@ -107,7 +107,7 @@ public partial class Form1 : Form
         var checkUpdatesItem = new ToolStripMenuItem("Check for Updates") { ForeColor = Color.White };
         var aboutItem = new ToolStripMenuItem("About") { ForeColor = Color.White };
 
-        checkUpdatesItem.Click += async (_, _) => await CheckForUpdatesAsync(userInitiated: true);
+        checkUpdatesItem.Click += async (_, _) => await CheckForUpdatesAsync(userInitiated: true, preferCachedResult: false);
         aboutItem.Click += (_, _) => new AboutForm().ShowDialog(this);
 
         helpMenu.DropDownItems.Add(checkUpdatesItem);
@@ -127,7 +127,7 @@ public partial class Form1 : Form
     /// Checks GitHub for a newer release, prompts user, and downloads installer asset.
     /// userInitiated controls whether "no update" / error popups are shown.
     /// </summary>
-    private async System.Threading.Tasks.Task CheckForUpdatesAsync(bool userInitiated)
+    private async System.Threading.Tasks.Task CheckForUpdatesAsync(bool userInitiated, bool preferCachedResult)
     {
         if (_isCheckingForUpdates)
         {
@@ -137,7 +137,7 @@ public partial class Form1 : Form
         _isCheckingForUpdates = true;
         try
         {
-            var result = await AppUpdater.CheckForUpdateAsync();
+            var result = await AppUpdater.CheckForUpdateAsync(useCache: preferCachedResult);
 
             if (!result.HasUpdate)
             {
