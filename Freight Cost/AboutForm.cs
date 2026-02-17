@@ -1,7 +1,6 @@
 using Freight_Cost.Core;
 using Freight_Cost.UI;
 using System.Diagnostics;
-using System.Text.Json;
 
 
 namespace Freight_Cost;
@@ -71,16 +70,17 @@ public sealed class AboutForm : Form
         {
             try
             {
-                var tag = await GetLatestGitHubReleaseTagAsync();
+                // Reuse cached updater result to avoid an API call every time About opens.
+                var update = await AppUpdater.CheckForUpdateAsync(useCache: true);
+                var tag = update.LatestTag ?? update.LatestVersion?.ToString();
 
-                if (!string.IsNullOrWhiteSpace(tag))
-                    latest.Text = $"Latest: {tag}";
-                else
-                    latest.Text = "Latest: (unknown)";
+                latest.Text = !string.IsNullOrWhiteSpace(tag)
+                    ? $"Latest: {tag}"
+                    : "Latest: (unknown)";
             }
             catch
             {
-                // If work PC blocks GitHub or no internet, don't crash the About form
+                // If work PC blocks GitHub or no internet, don't crash the About form.
                 latest.Text = "Latest: (offline)";
             }
         };
@@ -174,25 +174,4 @@ public sealed class AboutForm : Form
 
         AcceptButton = okButton;
     }
-    private static async Task<string?> GetLatestGitHubReleaseTagAsync()
-    {
-        // GitHub API endpoint for latest release
-        const string url = "https://api.github.com/repos/bmortel/Freight-Cost/releases/latest";
-
-        using var http = new HttpClient();
-
-        // GitHub requires a User-Agent header or it can reject requests
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("Freight-Cost-App");
-
-        // Download JSON
-        var json = await http.GetStringAsync(url);
-
-        // Parse only what we need: tag_name (example: "v1.2.0")
-        using var doc = JsonDocument.Parse(json);
-        if (doc.RootElement.TryGetProperty("tag_name", out var tag))
-            return tag.GetString();
-
-        return null;
-    }
-
 }
