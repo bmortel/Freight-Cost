@@ -1,4 +1,5 @@
 using Freight_Cost.UI;
+using Freight_Cost.Core;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -68,12 +69,12 @@ partial class Form1
 
         SuspendLayout();
 
-        Text = "M.F. BOYS CALCULATOR";
+        Text = $"M.F. BOYS CALCULATOR v{AppUpdater.CurrentVersion}";
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = true;
-        ClientSize = new Size(1000, 690);
+        ClientSize = new Size(1000, 600);
         BackColor = Theme.AppBackground;
         ForeColor = Theme.TextPrimary;
         AutoScaleMode = AutoScaleMode.Font;

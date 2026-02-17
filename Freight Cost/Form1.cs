@@ -192,13 +192,28 @@ public partial class Form1 : Form
                 return;
             }
 
-            var updatesDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Freight Cost",
-                "Updates");
+            var defaultDownloadsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (string.IsNullOrWhiteSpace(defaultDownloadsDirectory))
+            {
+                defaultDownloadsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            }
 
-            // Save installer/archive under LocalAppData so write permissions are reliable.
-            var downloadPath = Path.Combine(updatesDirectory, result.Asset.Name);
+            using var saveDialog = new SaveFileDialog
+            {
+                Title = "Choose where to save the update",
+                FileName = result.Asset.Name,
+                InitialDirectory = defaultDownloadsDirectory,
+                Filter = "All files (*.*)|*.*",
+                RestoreDirectory = true,
+                OverwritePrompt = true
+            };
+
+            if (saveDialog.ShowDialog(this) != DialogResult.OK || string.IsNullOrWhiteSpace(saveDialog.FileName))
+            {
+                return;
+            }
+
+            var downloadPath = saveDialog.FileName;
             await AppUpdater.DownloadAssetAsync(result.Asset.DownloadUrl, downloadPath);
 
             var launch = MessageBox.Show(
