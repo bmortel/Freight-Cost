@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Freight_Cost.Core;
 
@@ -19,6 +20,7 @@ internal static class AppUpdater
     private const string Owner = "bmortel";
     private const string Repository = "Freight-Cost";
     private static readonly HttpClient HttpClient = CreateHttpClient();
+    private static readonly TimeSpan StartupCacheDuration = TimeSpan.FromHours(6);
 
     /// <summary>
     /// Represents one downloadable file attached to a GitHub release.
@@ -61,11 +63,29 @@ internal static class AppUpdater
     /// <summary>
     /// Compares current app version against latest GitHub release.
     /// </summary>
-    internal static async Task<UpdateCheckResult> CheckForUpdateAsync(CancellationToken cancellationToken = default)
+    internal static async Task<UpdateCheckResult> CheckForUpdateAsync(bool useCache, CancellationToken cancellationToken = default)
     {
         var currentVersion = GetCurrentAppVersion();
-        var latestRelease = await GetLatestReleaseAsync(cancellationToken).ConfigureAwait(false);
 
+        if (useCache && TryReadCachedResult(currentVersion, out var cachedResult))
+        {
+            return cachedResult;
+        }
+
+        var latestRelease = await GetLatestReleaseAsync(cancellationToken).ConfigureAwait(false);
+        var result = CreateResult(currentVersion, latestRelease);
+
+        if (useCache)
+        {
+            TryWriteCachedResult(result, currentVersion);
+        }
+
+        return result;
+    }
+
+
+    private static UpdateCheckResult CreateResult(Version currentVersion, LatestRelease latestRelease)
+    {
         if (latestRelease.Version is null || latestRelease.Version <= currentVersion)
         {
             return new UpdateCheckResult
@@ -85,6 +105,98 @@ internal static class AppUpdater
             LatestTag = latestRelease.Tag,
             Asset = selectedAsset
         };
+    }
+
+    private static bool TryReadCachedResult(Version currentVersion, out UpdateCheckResult result)
+    {
+        result = default!;
+
+        try
+        {
+            var cachePath = GetCacheFilePath();
+            if (!File.Exists(cachePath))
+            {
+                return false;
+            }
+
+            var json = File.ReadAllText(cachePath);
+            var entry = JsonSerializer.Deserialize<UpdateCheckCacheEntry>(json);
+            if (entry is null)
+            {
+                return false;
+            }
+
+            if (!string.Equals(entry.AppVersion, currentVersion.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (!DateTimeOffset.TryParse(entry.CheckedAtUtc, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var checkedAt))
+            {
+                return false;
+            }
+
+            if (DateTimeOffset.UtcNow - checkedAt > StartupCacheDuration)
+            {
+                return false;
+            }
+
+            result = new UpdateCheckResult
+            {
+                HasUpdate = entry.HasUpdate,
+                LatestVersion = ParseVersion(entry.LatestTag),
+                LatestTag = entry.LatestTag,
+                Asset = string.IsNullOrWhiteSpace(entry.AssetName) || string.IsNullOrWhiteSpace(entry.AssetDownloadUrl)
+                    ? null
+                    : new UpdateAsset
+                    {
+                        Name = entry.AssetName,
+                        DownloadUrl = entry.AssetDownloadUrl
+                    }
+            };
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void TryWriteCachedResult(UpdateCheckResult result, Version currentVersion)
+    {
+        try
+        {
+            var entry = new UpdateCheckCacheEntry
+            {
+                AppVersion = currentVersion.ToString(),
+                CheckedAtUtc = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                HasUpdate = result.HasUpdate,
+                LatestTag = result.LatestTag ?? result.LatestVersion?.ToString() ?? string.Empty,
+                AssetName = result.Asset?.Name,
+                AssetDownloadUrl = result.Asset?.DownloadUrl
+            };
+
+            var cachePath = GetCacheFilePath();
+            var directory = Path.GetDirectoryName(cachePath);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var json = JsonSerializer.Serialize(entry);
+            File.WriteAllText(cachePath, json);
+        }
+        catch
+        {
+            // Ignore cache-write failures and continue normal app behavior.
+        }
+    }
+
+    private static string GetCacheFilePath()
+    {
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        return Path.Combine(appData, "Freight Cost", "UpdateCache", "latest-update-check.json");
     }
 
     /// <summary>
@@ -246,5 +358,15 @@ internal static class AppUpdater
         internal required string Tag { get; init; }
         internal required Version? Version { get; init; }
         internal required IReadOnlyList<UpdateAsset> Assets { get; init; }
+    }
+
+    private sealed class UpdateCheckCacheEntry
+    {
+        public string AppVersion { get; set; } = string.Empty;
+        public string CheckedAtUtc { get; set; } = string.Empty;
+        public bool HasUpdate { get; set; }
+        public string LatestTag { get; set; } = string.Empty;
+        public string? AssetName { get; set; }
+        public string? AssetDownloadUrl { get; set; }
     }
 }
