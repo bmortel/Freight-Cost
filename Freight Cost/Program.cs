@@ -1,14 +1,14 @@
 using System;
 using System.Windows.Forms;
 
-namespace Freight_Cost
+namespace Freight_Cost;
+
+internal static class Program
 {
-    internal static class Program
+    [STAThread]
+    private static void Main()
     {
-        [STAThread]
-        static void Main()
-        {
-            Application.Run(new Form1());
-        }
+        ApplicationConfiguration.Initialize();
+        Application.Run(new Form1());
     }
 }
