@@ -42,6 +42,8 @@ internal static class AppUpdater
         internal UpdateAsset? Asset { get; init; }
     }
 
+    internal static Version CurrentVersion => GetCurrentAppVersion();
+
     private static Version GetCurrentAppVersion()
     {
         var entry = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();

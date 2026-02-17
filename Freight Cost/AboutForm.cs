@@ -1,3 +1,4 @@
+using Freight_Cost.Core;
 using Freight_Cost.UI;
 using System.Diagnostics;
 using System.Text.Json;
@@ -52,7 +53,7 @@ public sealed class AboutForm : Form
         var version = new Label
         {
             // Application.ProductVersion pulls from your assembly/app version
-            Text = $"Version {Application.ProductVersion}",
+            Text = $"Version {AppUpdater.CurrentVersion}",
             Dock = DockStyle.Top,
             Height = 22,
             ForeColor = Theme.TextMuted
