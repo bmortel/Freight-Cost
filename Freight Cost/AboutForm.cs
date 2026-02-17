@@ -98,15 +98,17 @@ public sealed class AboutForm : Form
         {
             Dock = DockStyle.Fill,
             BackColor = Theme.CardBackground,
-            Padding = new Padding(14)
+            Padding = new Padding(14),
+            AutoScroll = true,
+            TabStop = true,   
         };
 
         var message = new Label
         {
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.Top,
             ForeColor = Theme.TextPrimary,
             TextAlign = ContentAlignment.TopLeft,
-            AutoSize = false,
+            AutoSize = true,
             Font = new Font("Segoe UI", 10f),
             Text =
                 "Created by Rambo for real M.F.'ers\n\n" +
@@ -119,7 +121,12 @@ public sealed class AboutForm : Form
                 "• Option B uses the C.H. Robinson fee and overrides Option A\n\n" +
                 "Formula:\n" +
                 "Freight Cost = (Quote × multiplier) + flat fee\n" +
-                "Rounded to 2 decimals (AwayFromZero)."
+                "Rounded to 2 decimals (AwayFromZero)." 
+        };
+
+        bodyCard.Resize += (s, e) =>
+        {
+            message.MaximumSize = new Size(bodyCard.ClientSize.Width - bodyCard.Padding.Horizontal, 0);
         };
 
         var linksPanel = new FlowLayoutPanel

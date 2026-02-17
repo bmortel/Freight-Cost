@@ -142,12 +142,13 @@ partial class Form1
         _outputCaption.Margin = new Padding(0, 10, 8, 0);
 
         _outputValue.Text = "";
-        _outputValue.Dock = DockStyle.None;
+        _outputValue.Dock = DockStyle.Fill;
         _outputValue.Font = new Font(Font.FontFamily, 14f, FontStyle.Bold);
         _outputValue.TextAlign = ContentAlignment.MiddleRight;
         _outputValue.BackColor = Theme.CardBackground;
         _outputValue.ForeColor = Theme.TextPrimary;
-        _outputValue.Margin = new Padding(0, 8, 0, 8);
+        _outputValue.AutoSize = true;
+        _outputValue.Margin = new Padding(0, 8, 0, 0);
 
         _inputs.Controls.Add(_label1, 0, 0);
         _inputs.Controls.Add(_input1, 0, 1);
@@ -197,10 +198,10 @@ partial class Form1
         var tip = new ToolTip(components);
         tip.SetToolTip(_ytButton, "Open help video (YouTube)");
 
-        _rambo.Dock = DockStyle.Fill;
+        _rambo.Dock = DockStyle.None;
         _rambo.SizeMode = PictureBoxSizeMode.Zoom;
         _rambo.BackColor = Theme.AppBackground;
-        _rambo.Margin = new Padding(5);
+      //  _rambo.Margin = new Padding(5);
         _rambo.Image = Properties.Resources.RAMBO;
 
         var outputContainer = new FlowLayoutPanel
@@ -208,6 +209,7 @@ partial class Form1
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = false,
+            AutoSize = true,
             BackColor = Theme.AppBackground,
             Margin = new Padding(0)
         };
@@ -238,6 +240,7 @@ partial class Form1
         _right.Controls.Add(_history, 0, 1);
 
         Theme.Apply(this);
+        _outputValue.ForeColor = Color.Gold;
         SetSecondInputVisible(false);
         AcceptButton = _calc;
 

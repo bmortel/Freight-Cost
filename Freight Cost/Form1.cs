@@ -421,6 +421,7 @@ public partial class Form1 : Form
     {
         var textBox = GetActiveInput();
         textBox.Text = string.Empty;
+        _outputValue.Text = string.Empty;   
         textBox.SelectionStart = 0;
 
         if (!textBox.Focused)
