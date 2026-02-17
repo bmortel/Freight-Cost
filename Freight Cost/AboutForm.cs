@@ -15,7 +15,7 @@ public sealed class AboutForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(460, 420);
+        ClientSize = new Size(460, 560);
         BackColor = Theme.AppBackground;
         Font = new Font("Segoe UI", 10f);
 
@@ -76,16 +76,17 @@ public sealed class AboutForm : Form
             AutoSize = false,
             Font = new Font("Segoe UI", 10f),
             Text =
-                "Calculation logic:\n" +
-                "• Quote < $250 → multiplier 1.50\n" +
-                "• Quote < $1,000 → multiplier 1.33\n" +
-                "• Otherwise → multiplier 1.20\n\n" +
-                "Length fee rules:\n" +
-                "• Option A (8'-20') adds a flat $150\n" +
-                "• Option B uses manual C.H. Robinson fee\n\n" +
+                "Created by Rambo for real M.F.'ers\n\n" +
+                "Calculation Logic:\n" +
+                "• If Quote < $250 → multiplier = 1.50\n" +
+                "• If Quote < $1,000 → multiplier = 1.33\n" +
+                "• Otherwise → multiplier = 1.20\n\n" +
+                "Length Fee Rules:\n" +
+                "• Option A (Length 8'–20') adds a flat $150 fee\n" +
+                "• Option B uses the C.H. Robinson fee and overrides Option A\n\n" +
                 "Formula:\n" +
                 "Freight Cost = (Quote × multiplier) + flat fee\n" +
-                "Rounded to two decimals (AwayFromZero)."
+                "Rounded to 2 decimals (AwayFromZero)."
         };
 
         var linksPanel = new FlowLayoutPanel
@@ -97,7 +98,7 @@ public sealed class AboutForm : Form
 
         var githubLink = new LinkLabel
         {
-            Text = "GitHub Repository",
+            Text = "GitHub",
             LinkColor = Theme.Accent,
             ActiveLinkColor = Theme.Accent,
             VisitedLinkColor = Theme.Accent,

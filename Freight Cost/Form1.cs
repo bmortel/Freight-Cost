@@ -8,9 +8,13 @@ using System.Windows.Forms;
 
 namespace Freight_Cost;
 
+/// <summary>
+/// Main calculator window.
+/// UI events are routed into small methods so beginners can trace behavior easily.
+/// </summary>
 public partial class Form1 : Form
 {
-    private const string HelpVideoUrl = "https://www.youtube.com/watch?v=1WaV2x8GXj0";
+    private const string HelpVideoUrl = "https://www.youtube.com/watch?v=1WaV2x8GXj0&list=RD1WaV2x8GXj0&start_radio=1";
 
     private TextBox? _activeInput;
     private bool _isCheckingForUpdates;
@@ -22,6 +26,9 @@ public partial class Form1 : Form
         WireEvents();
     }
 
+    /// <summary>
+    /// Central place to wire all runtime event handlers.
+    /// </summary>
     private void WireEvents()
     {
         FormClosing += OnFormClosing;
@@ -35,6 +42,7 @@ public partial class Form1 : Form
         _calc.Click += (_, _) => CalculateAndRender();
         _ytButton.Click += (_, _) => OpenHelpVideo();
 
+        // Startup behavior: focus first box and run a silent update check.
         Shown += async (_, _) =>
         {
             _input1.Focus();
@@ -45,14 +53,17 @@ public partial class Form1 : Form
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
         var result = MessageBox.Show(
-            "Exit Freight Cost Calculator?",
-            "Confirm Exit",
+            "Exit the Calculator MFer?",
+            "Got soft hands brother?",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
 
         e.Cancel = result != DialogResult.Yes;
     }
 
+    /// <summary>
+    /// Builds the top menu (File / Help) and hooks item actions.
+    /// </summary>
     private void AddMenuBar()
     {
         var menu = new MenuStrip
@@ -74,8 +85,8 @@ public partial class Form1 : Form
         clearHistory.Click += (_, _) =>
         {
             var confirm = MessageBox.Show(
-                "Clear all history entries? This action cannot be undone.",
-                "Confirm",
+                "Are you sure you want to clear all history?\nThis cannot be undone.",
+                "Confirm Clear History",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
 
@@ -111,6 +122,10 @@ public partial class Form1 : Form
     }
 
 
+    /// <summary>
+    /// Checks GitHub for a newer release, prompts user, and downloads installer asset.
+    /// userInitiated controls whether "no update" / error popups are shown.
+    /// </summary>
     private async System.Threading.Tasks.Task CheckForUpdatesAsync(bool userInitiated)
     {
         if (_isCheckingForUpdates)
@@ -154,6 +169,7 @@ public partial class Form1 : Form
                 "Freight Cost",
                 "Updates");
 
+            // Save installer/archive under LocalAppData so write permissions are reliable.
             var downloadPath = Path.Combine(updatesDirectory, result.Asset.Name);
             await AppUpdater.DownloadAssetAsync(result.Asset.DownloadUrl, downloadPath);
 
@@ -189,6 +205,9 @@ public partial class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Option B means user enters custom length fee, so we disable Option A.
+    /// </summary>
     private void OnOptionBChanged(object? sender, EventArgs e)
     {
         if (_optB.Checked)
@@ -205,6 +224,9 @@ public partial class Form1 : Form
         _input1.Focus();
     }
 
+    /// <summary>
+    /// Opens the external help video in the default browser.
+    /// </summary>
     private void OpenHelpVideo()
     {
         try
@@ -221,6 +243,9 @@ public partial class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Validates inputs, calculates freight cost, then renders output + history row.
+    /// </summary>
     private void CalculateAndRender()
     {
         if (!CurrencyInput.TryParseUsd(_input1.Text, out var quote, out var quoteError))
@@ -261,6 +286,9 @@ public partial class Form1 : Form
         _output.SelectionStart = _output.TextLength;
     }
 
+    /// <summary>
+    /// Shows/hides the second input used by Option B.
+    /// </summary>
     private void SetSecondInputVisible(bool visible)
     {
         _label2.Visible = visible;
@@ -272,6 +300,9 @@ public partial class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Creates a numeric keypad for touch/mouse input convenience.
+    /// </summary>
     private Control BuildKeypad()
     {
         var grid = new TableLayoutPanel
@@ -356,6 +387,9 @@ public partial class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Applies structure + style to the history DataGridView.
+    /// </summary>
     private void ConfigureHistoryGrid()
     {
         _history.Dock = DockStyle.Fill;
@@ -481,6 +515,9 @@ public partial class Form1 : Form
         textBox.ContextMenuStrip = menu;
     }
 
+    /// <summary>
+    /// Restricts textbox input to currency-friendly characters and normalizes paste.
+    /// </summary>
     private static void AttachInputFilters(TextBox textBox)
     {
         textBox.KeyPress += (_, e) =>

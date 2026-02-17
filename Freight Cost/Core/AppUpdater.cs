@@ -9,27 +9,39 @@ using System.Threading.Tasks;
 
 namespace Freight_Cost.Core;
 
+/// <summary>
+/// Handles update discovery + download from GitHub releases.
+/// Keep this class UI-free so forms can call it from different screens.
+/// </summary>
 internal static class AppUpdater
 {
     private const string Owner = "bmortel";
     private const string Repository = "Freight-Cost";
     private static readonly HttpClient HttpClient = CreateHttpClient();
 
+    /// <summary>
+    /// Represents one downloadable file attached to a GitHub release.
+    /// </summary>
     internal sealed class UpdateAsset
     {
         internal required string Name { get; init; }
         internal required string DownloadUrl { get; init; }
     }
 
+    /// <summary>
+    /// Result returned to the UI after checking GitHub.
+    /// </summary>
     internal sealed class UpdateCheckResult
     {
         internal required bool HasUpdate { get; init; }
-        internal required Version CurrentVersion { get; init; }
         internal Version? LatestVersion { get; init; }
         internal string? LatestTag { get; init; }
         internal UpdateAsset? Asset { get; init; }
     }
 
+    /// <summary>
+    /// Compares current app version against latest GitHub release.
+    /// </summary>
     internal static async Task<UpdateCheckResult> CheckForUpdateAsync(CancellationToken cancellationToken = default)
     {
         var currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0, 0);
@@ -40,7 +52,6 @@ internal static class AppUpdater
             return new UpdateCheckResult
             {
                 HasUpdate = false,
-                CurrentVersion = currentVersion,
                 LatestVersion = latestRelease.Version,
                 LatestTag = latestRelease.Tag,
                 Asset = null
@@ -51,13 +62,15 @@ internal static class AppUpdater
         return new UpdateCheckResult
         {
             HasUpdate = selectedAsset is not null,
-            CurrentVersion = currentVersion,
             LatestVersion = latestRelease.Version,
             LatestTag = latestRelease.Tag,
             Asset = selectedAsset
         };
     }
 
+    /// <summary>
+    /// Downloads the selected release asset to a local file path.
+    /// </summary>
     internal static async Task DownloadAssetAsync(string downloadUrl, string destinationPath, CancellationToken cancellationToken = default)
     {
         var directory = Path.GetDirectoryName(destinationPath);
@@ -75,6 +88,9 @@ internal static class AppUpdater
         await sourceStream.CopyToAsync(destinationStream, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Calls GitHub's latest-release endpoint and extracts tag + asset list.
+    /// </summary>
     private static async Task<LatestRelease> GetLatestReleaseAsync(CancellationToken cancellationToken)
     {
         using var response = await HttpClient.GetAsync($"repos/{Owner}/{Repository}/releases/latest", cancellationToken)
@@ -117,6 +133,9 @@ internal static class AppUpdater
         };
     }
 
+    /// <summary>
+    /// Picks the most installer-friendly file first.
+    /// </summary>
     private static UpdateAsset? SelectPreferredAsset(IReadOnlyList<UpdateAsset> assets)
     {
         foreach (var extension in new[] { ".exe", ".msi", ".zip" })
@@ -133,6 +152,9 @@ internal static class AppUpdater
         return assets.Count > 0 ? assets[0] : null;
     }
 
+    /// <summary>
+    /// Converts a Git tag like "v1.2.3" into a Version object.
+    /// </summary>
     private static Version? ParseVersion(string? rawTag)
     {
         if (string.IsNullOrWhiteSpace(rawTag))
@@ -146,6 +168,9 @@ internal static class AppUpdater
         return Version.TryParse(prereleaseSplit[0], out var version) ? version : null;
     }
 
+    /// <summary>
+    /// Creates one shared HttpClient with GitHub-required headers.
+    /// </summary>
     private static HttpClient CreateHttpClient()
     {
         var httpClient = new HttpClient
@@ -158,6 +183,9 @@ internal static class AppUpdater
         return httpClient;
     }
 
+    /// <summary>
+    /// Internal DTO used while parsing the GitHub API response.
+    /// </summary>
     private sealed class LatestRelease
     {
         internal required string Tag { get; init; }

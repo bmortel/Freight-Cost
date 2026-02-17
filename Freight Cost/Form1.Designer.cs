@@ -28,6 +28,7 @@ partial class Form1
     private TableLayoutPanel _right = null!;
 
     private Button _ytButton = null!;
+    private PictureBox _rambo = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -61,6 +62,7 @@ partial class Form1
         _bottomRow = new TableLayoutPanel();
         _right = new TableLayoutPanel();
         _ytButton = new Button();
+        _rambo = new PictureBox();
 
         SuspendLayout();
 
@@ -168,22 +170,30 @@ partial class Form1
         _left.Controls.Add(_calc, 0, 3);
 
         _bottomRow.Dock = DockStyle.Fill;
-        _bottomRow.ColumnCount = 2;
+        _bottomRow.ColumnCount = 3;
         _bottomRow.BackColor = Theme.AppBackground;
         _bottomRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
         _bottomRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _bottomRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
 
-        _ytButton.Text = "?";
+        _ytButton.Text = "🔥";
         _ytButton.Size = new Size(40, 40);
         _ytButton.Margin = new Padding(5);
-        _ytButton.Font = new Font("Segoe UI", 12f, FontStyle.Bold);
+        _ytButton.Font = new Font("Segoe UI Emoji", 15f, FontStyle.Regular);
         Theme.StyleGhostButton(_ytButton);
 
         var tip = new ToolTip(components);
-        tip.SetToolTip(_ytButton, "Open help video");
+        tip.SetToolTip(_ytButton, "Open help video (YouTube)");
+
+        _rambo.Dock = DockStyle.Fill;
+        _rambo.SizeMode = PictureBoxSizeMode.Zoom;
+        _rambo.BackColor = Theme.AppBackground;
+        _rambo.Margin = new Padding(5);
+        _rambo.Image = Properties.Resources.RAMBO;
 
         _bottomRow.Controls.Add(_ytButton, 0, 0);
         _bottomRow.Controls.Add(_output, 1, 0);
+        _bottomRow.Controls.Add(_rambo, 2, 0);
         _left.Controls.Add(_bottomRow, 0, 4);
 
         _right.Dock = DockStyle.Fill;
