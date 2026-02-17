@@ -288,7 +288,7 @@ namespace Freight_Cost
 
             // BuildKeypad() returns a Control (TableLayoutPanel)
             // containing keypad buttons wired to your input logic.
-            _left.Controls.Add(BuildKeypad(), 0, 2);
+            _left.Controls.Add(BuildKeypad, 0, 2);
 
             // ============================================================
             // CALCULATE BUTTON
@@ -338,17 +338,19 @@ namespace Freight_Cost
             tip.SetToolTip(_ytButton, "Open help video (YouTube)");
 
 
-            try
-            {
-                if (System.IO.File.Exists("RAMgBO.png"))
-                {
-                    _rambo.Image = Image.FromFile("RAMBO.png");
-                }
-            }
-            catch
-            {
-                _rambo.Image = null; // or a default icon if you have one
-            }
+            //_rambo.Image = Properties.Re
+            //try
+            //{
+            //    if (System.IO.File.Exists("RAMBO.png"))
+            //    {
+            //        _rambo.Image = Image.FromFile("RAMBO.png");
+            //    }
+            //}
+            //catch
+            //{
+            //    _rambo.Image = null; // or a default icon if you have one
+            //}
+
             _rambo.Dock = DockStyle.None;
             _rambo.SizeMode = PictureBoxSizeMode.Zoom;
             _rambo.BackColor = AppBackground;

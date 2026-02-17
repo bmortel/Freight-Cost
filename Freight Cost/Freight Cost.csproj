@@ -2,15 +2,15 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <!-- App icon -->
+    <!-- App icon (put favicon.ico in the PROJECT ROOT to match this) -->
     <ApplicationIcon>favicon.ico</ApplicationIcon>
 
-    <!-- Single-file publish settings -->
+    <!-- Single-file publish -->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
@@ -18,18 +18,18 @@
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
+  <!-- Resource designer wiring (this is the correct way) -->
   <ItemGroup>
-    <None Remove="1000_F_229633543_61dvMWKJbtITQEMmRY98RlbpF0OQoAsk.jpg" />
-  </ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
 
-  <!-- Keep the ico in the project (doesn't need to be Content) -->
-  <ItemGroup>
-    <Content Include="favicon.ico" />
-  </ItemGroup>
-
-  <!-- If you want RAMBO.png to be inside the exe, DO NOT copy it out -->
-  <ItemGroup>
-    <EmbeddedResource Include="RAMBO.png" />
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

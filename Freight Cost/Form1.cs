@@ -46,9 +46,6 @@ namespace Freight_Cost
         {
             InitializeComponent();
             AddMenuBar();
-            this.Icon = new Icon(
-    System.IO.Path.Combine(Application.StartupPath, "C:\\Users\\Brandon.DESKTOP-6FU3T37\\source\\repos\\Freight Cost\\Freight Cost\\favicon.ico")
-    );
             this.FormClosing += (_, e) =>
             {
                 var result = MessageBox.Show(
@@ -166,8 +163,7 @@ namespace Freight_Cost
             // The form's root control is your split TableLayoutPanel.
             // (The designer adds it to Controls first, so Controls[0] works.)
             if (Controls.Count == 0) return;
-            var split = Controls[0] as TableLayoutPanel;
-            if (split == null) return;
+            if (Controls[0] is not TableLayoutPanel split) return;
 
             // MouseUp lets us detect left vs right click.
             _historyHeader.MouseUp += (_, me) =>
@@ -606,7 +602,7 @@ namespace Freight_Cost
         /// - Ctrl+V paste is intercepted and normalized
         /// - TextChanged normalizes anything that slips in
         /// </summary>
-        private void AttachInputFilters(TextBox tb)
+        private static void AttachInputFilters(TextBox tb)
         {
             // KeyPress: light filter while typing
             tb.KeyPress += (s, e) =>
@@ -642,8 +638,8 @@ namespace Freight_Cost
                         int selStart = tb.SelectionStart;
                         int selLen = tb.SelectionLength;
 
-                        string before = tb.Text.Substring(0, selStart);
-                        string after = tb.Text.Substring(selStart + selLen);
+                        string before = tb.Text[..selStart];
+                        string after = tb.Text[(selStart + selLen)..];
 
                         // Combine old text + pasted text + remainder, then normalize
                         string combined = before + clip + after;
@@ -710,8 +706,10 @@ namespace Freight_Cost
             // Context menu for the history grid
             var menu = new ContextMenuStrip();
 
-            var copyItem = new ToolStripMenuItem("Copy");
-            copyItem.ShortcutKeys = Keys.Control | Keys.C;
+            var copyItem = new ToolStripMenuItem("Copy")
+            {
+                ShortcutKeys = Keys.Control | Keys.C
+            };
             copyItem.Click += (_, __) =>
             {
                 try
@@ -774,8 +772,8 @@ namespace Freight_Cost
                     int selStart = tb.SelectionStart;
                     int selLen = tb.SelectionLength;
 
-                    string before = tb.Text.Substring(0, selStart);
-                    string after = tb.Text.Substring(selStart + selLen);
+                    string before = tb.Text[..selStart];
+                    string after = tb.Text[(selStart + selLen)..];
 
                     string combined = before + clip + after;
                     tb.Text = NormalizeMoneyText(combined);
@@ -809,48 +807,51 @@ namespace Freight_Cost
         // ============================================================
         // KEYPAD (UPDATED so it doesn't "append raw" anymore)
         // ============================================================
-        private Control BuildKeypad()
+        private Control BuildKeypad
         {
-            var grid = new TableLayoutPanel
+            get
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 4,
-                RowCount = 4,
-                Margin = new Padding(0),
-                Padding = new Padding(6),
-                BackColor = CardBackground
-            };
+                var grid = new TableLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    ColumnCount = 4,
+                    RowCount = 4,
+                    Margin = new Padding(0),
+                    Padding = new Padding(6),
+                    BackColor = CardBackground
+                };
 
-            for (int c = 0; c < 4; c++)
-                grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25f));
-            for (int r = 0; r < 4; r++)
-                grid.RowStyles.Add(new RowStyle(SizeType.Percent, 25f));
+                for (int c = 0; c < 4; c++)
+                    grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25f));
+                for (int r = 0; r < 4; r++)
+                    grid.RowStyles.Add(new RowStyle(SizeType.Percent, 25f));
 
-            // Row 1
-            grid.Controls.Add(MakeKeyButton("7", () => InsertToActive("7")), 0, 0);
-            grid.Controls.Add(MakeKeyButton("8", () => InsertToActive("8")), 1, 0);
-            grid.Controls.Add(MakeKeyButton("9", () => InsertToActive("9")), 2, 0);
-            grid.Controls.Add(MakeKeyButton("CE", BackspaceActive), 3, 0);
+                // Row 1
+                grid.Controls.Add(MakeKeyButton("7", () => InsertToActive("7")), 0, 0);
+                grid.Controls.Add(MakeKeyButton("8", () => InsertToActive("8")), 1, 0);
+                grid.Controls.Add(MakeKeyButton("9", () => InsertToActive("9")), 2, 0);
+                grid.Controls.Add(MakeKeyButton("CE", BackspaceActive), 3, 0);
 
-            // Row 2
-            grid.Controls.Add(MakeKeyButton("4", () => InsertToActive("4")), 0, 1);
-            grid.Controls.Add(MakeKeyButton("5", () => InsertToActive("5")), 1, 1);
-            grid.Controls.Add(MakeKeyButton("6", () => InsertToActive("6")), 2, 1);
-            grid.Controls.Add(MakeKeyButton(".", () => InsertToActive(".")), 3, 1);
+                // Row 2
+                grid.Controls.Add(MakeKeyButton("4", () => InsertToActive("4")), 0, 1);
+                grid.Controls.Add(MakeKeyButton("5", () => InsertToActive("5")), 1, 1);
+                grid.Controls.Add(MakeKeyButton("6", () => InsertToActive("6")), 2, 1);
+                grid.Controls.Add(MakeKeyButton(".", () => InsertToActive(".")), 3, 1);
 
-            // Row 3
-            grid.Controls.Add(MakeKeyButton("1", () => InsertToActive("1")), 0, 2);
-            grid.Controls.Add(MakeKeyButton("2", () => InsertToActive("2")), 1, 2);
-            grid.Controls.Add(MakeKeyButton("3", () => InsertToActive("3")), 2, 2);
-            grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 3, 2);
+                // Row 3
+                grid.Controls.Add(MakeKeyButton("1", () => InsertToActive("1")), 0, 2);
+                grid.Controls.Add(MakeKeyButton("2", () => InsertToActive("2")), 1, 2);
+                grid.Controls.Add(MakeKeyButton("3", () => InsertToActive("3")), 2, 2);
+                grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 3, 2);
 
-            // Row 4
-            grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 0, 3);
-            grid.Controls.Add(MakeKeyButton("0", () => InsertToActive("0")), 1, 3);
-            grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 2, 3);
-            grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 3, 3);
+                // Row 4
+                grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 0, 3);
+                grid.Controls.Add(MakeKeyButton("0", () => InsertToActive("0")), 1, 3);
+                grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 2, 3);
+                grid.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = CardBackground }, 3, 3);
 
-            return grid;
+                return grid;
+            }
         }
 
         private Button MakeKeyButton(string text, Action onClick)
@@ -890,8 +891,8 @@ namespace Freight_Cost
             int selStart = tb.SelectionStart;
             int selLen = tb.SelectionLength;
 
-            string before = tb.Text.Substring(0, selStart);
-            string after = tb.Text.Substring(selStart + selLen);
+            string before = tb.Text[..selStart];
+            string after = tb.Text[(selStart + selLen)..];
 
             string combined = before + s + after;
             tb.Text = NormalizeMoneyText(combined);
