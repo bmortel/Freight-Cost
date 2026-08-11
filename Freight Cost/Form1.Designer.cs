@@ -69,7 +69,7 @@ partial class Form1
 
         SuspendLayout();
 
-        Text = $"M.F. BOYS CALCULATOR v{AppUpdater.CurrentVersion}";
+        Text = "M.F. BOYS CALCULATOR";
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;

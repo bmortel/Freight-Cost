@@ -139,9 +139,9 @@ public sealed class AboutForm : Form
         var githubLink = new LinkLabel
         {
             Text = "GitHub",
-            LinkColor = Theme.Accent,
-            ActiveLinkColor = Theme.Accent,
-            VisitedLinkColor = Theme.Accent,
+            LinkColor = Theme.TextPrimary,
+            ActiveLinkColor = Theme.TextMuted,
+            VisitedLinkColor = Theme.TextMuted,
             Margin = new Padding(0, 0, 16, 0)
         };
 

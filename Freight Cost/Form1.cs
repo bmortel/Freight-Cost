@@ -4,6 +4,9 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 
 namespace Freight_Cost;
@@ -16,15 +19,241 @@ public partial class Form1 : Form
 {
     private const string HelpVideoUrl = "https://www.youtube.com/watch?v=1WaV2x8GXj0&list=RD1WaV2x8GXj0&start_radio=1";
     private const string ReleasesPageUrl = "https://github.com/bmortel/Freight-Cost/releases";
+    private const string LogoSoundAlias = "FreightCostLogoSound";
 
     private TextBox? _activeInput;
     private bool _isCheckingForUpdates;
+    private DarkScrollBar? _historyVerticalScrollBar;
+    private DarkScrollBar? _historyHorizontalScrollBar;
 
     public Form1()
     {
         InitializeComponent();
+        Text = $"M.F. BOYS CALCULATOR v{AppUpdater.CurrentVersion}";
+        ApplyCalculatorLayout();
         AddMenuBar();
         WireEvents();
+    }
+
+    /// <summary>
+    /// Applies the quiet spacing and display hierarchy used by Windows 11 Calculator.
+    /// Kept outside the designer file so Visual Studio can safely regenerate it.
+    /// </summary>
+    private void ApplyCalculatorLayout()
+    {
+        FormBorderStyle = FormBorderStyle.FixedDialog;
+        MaximizeBox = false;
+        ClientSize = new Size(1080, 680);
+
+        _split.Padding = new Padding(20, 12, 20, 20);
+        _split.ColumnStyles[1].Width = 500;
+        _left.Margin = new Padding(0, 0, 18, 0);
+        _right.Margin = Padding.Empty;
+
+        _left.RowStyles[0].Height = 180;
+        _left.RowStyles[1].Height = 56;
+        _left.RowStyles[3].Height = 58;
+        _left.RowStyles[4].Height = 70;
+
+        _inputs.BackColor = Theme.AppBackground;
+        _inputs.Padding = new Padding(8, 10, 8, 4);
+        _inputs.Margin = Padding.Empty;
+        _inputs.RowStyles[0].Height = 22;
+        _inputs.RowStyles[1].Height = 60;
+        _inputs.RowStyles[2].Height = 22;
+        _inputs.RowStyles[3].Height = 60;
+
+        StyleDisplay(_input1, _label1);
+        StyleDisplay(_input2, _label2);
+        _label1.Text = "Quote";
+        _label2.Text = "C.H. Robinson length fee";
+
+        _optionsRow.BackColor = Theme.AppBackground;
+        _optionsRow.Padding = new Padding(8, 8, 8, 6);
+        _optA.Font = new Font("Segoe UI", 9.5f);
+        _optB.Font = new Font("Segoe UI", 9.5f);
+        _optA.FlatStyle = FlatStyle.Flat;
+        _optB.FlatStyle = FlatStyle.Flat;
+        _optA.FlatAppearance.BorderSize = 0;
+        _optB.FlatAppearance.BorderSize = 0;
+        StyleGoldCheckBox(_optA);
+        StyleGoldCheckBox(_optB);
+
+        _calc.Text = "Calculate  =";
+        _calc.Font = new Font("Segoe UI", 11f, FontStyle.Bold);
+        _calc.Margin = new Padding(6, 5, 6, 5);
+
+        _bottomRow.BackColor = Theme.AppBackground;
+        _rambo.Cursor = Cursors.Hand;
+        _rambo.TabStop = true;
+        _rambo.AccessibleName = "Play or stop the Rambo sound clip";
+        _outputCaption.ForeColor = Theme.TextMuted;
+        _outputCaption.Font = new Font("Segoe UI", 9.5f);
+        _outputValue.Font = new Font("Segoe UI", 19f, FontStyle.Bold);
+        _outputValue.ForeColor = Color.Gold;
+
+        _right.BackColor = Theme.AppBackground;
+        _historyTitle.Font = new Font("Segoe UI", 16f, FontStyle.Bold);
+        _historyTitle.Padding = new Padding(8, 0, 0, 0);
+        _history.BorderStyle = BorderStyle.FixedSingle;
+        ConfigureExternalHistoryScrollBars();
+
+        // Avoid WinForms drawing a persistent default-button outline around
+        // Calculate. Enter still calculates while either currency input is active.
+        AcceptButton = null;
+        KeyPreview = true;
+        KeyDown += (_, e) =>
+        {
+            if (e.KeyCode != Keys.Enter || ActiveControl is not TextBox)
+            {
+                return;
+            }
+
+            CalculateAndRender();
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+        };
+    }
+
+    private static void StyleGoldCheckBox(CheckBox checkBox)
+    {
+        checkBox.UseVisualStyleBackColor = false;
+        checkBox.CheckedChanged += (_, _) => checkBox.Invalidate();
+        checkBox.Paint += (_, e) =>
+        {
+            const int boxSize = 14;
+            var top = Math.Max(0, (checkBox.ClientSize.Height - boxSize) / 2);
+            var box = new Rectangle(1, top, boxSize, boxSize);
+
+            using var background = new SolidBrush(Theme.AppBackground);
+            using var border = new Pen(Color.FromArgb(105, 105, 105), 2f);
+            e.Graphics.FillRectangle(background, box);
+            e.Graphics.DrawRectangle(border, box);
+
+            if (!checkBox.Checked)
+            {
+                return;
+            }
+
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using var check = new Pen(Color.Gold, 2.2f)
+            {
+                StartCap = System.Drawing.Drawing2D.LineCap.Round,
+                EndCap = System.Drawing.Drawing2D.LineCap.Round
+            };
+            e.Graphics.DrawLines(check,
+            new Point[]
+            {
+                new Point(box.Left + 3, box.Top + 7),
+                new Point(box.Left + 6, box.Top + 10),
+                new Point(box.Left + 12, box.Top + 3)
+            });
+        };
+    }
+
+    private void ConfigureExternalHistoryScrollBars()
+    {
+        if (_historyVerticalScrollBar is not null)
+        {
+            return;
+        }
+
+        var host = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Theme.AppBackground,
+            ColumnCount = 2,
+            RowCount = 2,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20f));
+        host.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        host.RowStyles.Add(new RowStyle(SizeType.Absolute, 20f));
+
+        _historyVerticalScrollBar = new DarkScrollBar(DarkScrollOrientation.Vertical)
+        {
+            Dock = DockStyle.Fill,
+            Margin = new Padding(4, 0, 0, 0),
+            SmallChange = 1
+        };
+        _historyHorizontalScrollBar = new DarkScrollBar(DarkScrollOrientation.Horizontal)
+        {
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 4, 0, 0),
+            SmallChange = 10
+        };
+
+        _right.Controls.Remove(_history);
+        host.Controls.Add(_history, 0, 0);
+        host.Controls.Add(_historyVerticalScrollBar, 1, 0);
+        host.Controls.Add(_historyHorizontalScrollBar, 0, 1);
+        host.Controls.Add(new Panel { BackColor = Theme.AppBackground, Dock = DockStyle.Fill }, 1, 1);
+        _right.Controls.Add(host, 0, 1);
+
+        _historyVerticalScrollBar.ValueChanged += (_, _) =>
+        {
+            if (_history.RowCount > 0)
+            {
+                _history.FirstDisplayedScrollingRowIndex = Math.Min(
+                    _historyVerticalScrollBar.Value,
+                    _history.RowCount - 1);
+            }
+        };
+        _historyHorizontalScrollBar.ValueChanged += (_, _) =>
+            _history.HorizontalScrollingOffset = _historyHorizontalScrollBar.Value;
+
+        _history.RowsAdded += (_, _) => UpdateExternalHistoryScrollBars();
+        _history.RowsRemoved += (_, _) => UpdateExternalHistoryScrollBars();
+        _history.Resize += (_, _) => UpdateExternalHistoryScrollBars();
+        _history.ColumnWidthChanged += (_, _) => UpdateExternalHistoryScrollBars();
+        _history.Scroll += (_, _) => UpdateExternalHistoryScrollBars();
+        Shown += (_, _) => UpdateExternalHistoryScrollBars();
+    }
+
+    private void UpdateExternalHistoryScrollBars()
+    {
+        if (_historyVerticalScrollBar is null || _historyHorizontalScrollBar is null)
+        {
+            return;
+        }
+
+        var visibleRows = Math.Max(1, _history.DisplayedRowCount(false));
+        _historyVerticalScrollBar.Maximum = Math.Max(0, _history.RowCount - 1);
+        _historyVerticalScrollBar.LargeChange = visibleRows;
+        _historyVerticalScrollBar.Enabled = _history.RowCount > visibleRows;
+
+        var maximumVerticalValue = Math.Max(
+            _historyVerticalScrollBar.Minimum,
+            _historyVerticalScrollBar.Maximum - _historyVerticalScrollBar.LargeChange + 1);
+        var currentRow = Math.Max(0, _history.FirstDisplayedScrollingRowIndex);
+        _historyVerticalScrollBar.Value = Math.Min(currentRow, maximumVerticalValue);
+
+        var contentWidth = _history.Columns.GetColumnsWidth(DataGridViewElementStates.Visible);
+        var visibleWidth = Math.Max(1, _history.DisplayRectangle.Width);
+        _historyHorizontalScrollBar.Maximum = Math.Max(0, contentWidth - 1);
+        _historyHorizontalScrollBar.LargeChange = visibleWidth;
+        _historyHorizontalScrollBar.Enabled = contentWidth > visibleWidth;
+
+        var maximumHorizontalValue = Math.Max(
+            _historyHorizontalScrollBar.Minimum,
+            _historyHorizontalScrollBar.Maximum - _historyHorizontalScrollBar.LargeChange + 1);
+        _historyHorizontalScrollBar.Value = Math.Min(
+            _history.HorizontalScrollingOffset,
+            maximumHorizontalValue);
+    }
+
+    private static void StyleDisplay(TextBox input, Label label)
+    {
+        label.Font = new Font("Segoe UI", 9f, FontStyle.Regular);
+        label.ForeColor = Theme.TextMuted;
+        input.BackColor = Theme.AppBackground;
+        input.ForeColor = Theme.TextPrimary;
+        input.BorderStyle = BorderStyle.FixedSingle;
+        input.Font = new Font("Segoe UI", 27f, FontStyle.Regular);
+        input.Margin = new Padding(0, 2, 0, 2);
+        input.TextAlign = HorizontalAlignment.Right;
     }
 
     /// <summary>
@@ -42,6 +271,8 @@ public partial class Form1 : Form
         _optB.CheckedChanged += OnOptionBChanged;
         _calc.Click += (_, _) => CalculateAndRender();
         _ytButton.Click += (_, _) => OpenHelpVideo();
+        _rambo.Click += (_, _) => ToggleLogoSound();
+        FormClosed += (_, _) => StopLogoSound();
 
         // Startup behavior: focus first box and run a silent update check.
         Shown += async (_, _) =>
@@ -53,6 +284,13 @@ public partial class Form1 : Form
 
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
+        // Windows must be allowed to shut down without this application
+        // displaying or waiting on the normal user-close confirmation.
+        if (e.CloseReason == CloseReason.WindowsShutDown)
+        {
+            return;
+        }
+
         var result = MessageBox.Show(
             "Exit the Calculator MFer?",
             "Got soft hands brother?",
@@ -69,8 +307,10 @@ public partial class Form1 : Form
     {
         var menu = new MenuStrip
         {
-            BackColor = Theme.CardBackground,
+            BackColor = Theme.AppBackground,
             ForeColor = Theme.TextPrimary,
+            Font = new Font("Segoe UI", 10f),
+            Padding = new Padding(10, 4, 8, 4),
             RenderMode = ToolStripRenderMode.Professional,
             Renderer = new ToolStripProfessionalRenderer(new DarkMenuColors())
         };
@@ -286,6 +526,104 @@ public partial class Form1 : Form
         }
     }
 
+    private void ToggleLogoSound()
+    {
+        try
+        {
+            if (IsLogoSoundPlaying())
+            {
+                StopLogoSound();
+                return;
+            }
+
+            StopLogoSound();
+            var soundPath = ExtractLogoSound();
+            ThrowIfMciFailed(MciSendString(
+                $"open \"{soundPath}\" type mpegvideo alias {LogoSoundAlias}",
+                null,
+                0,
+                IntPtr.Zero));
+            ThrowIfMciFailed(MciSendString(
+                $"play {LogoSoundAlias}",
+                null,
+                0,
+                IntPtr.Zero));
+        }
+        catch (Exception ex)
+        {
+            StopLogoSound();
+            MessageBox.Show(
+                $"Unable to play the sound clip.\n{ex.Message}",
+                "Audio Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+    }
+
+    private static bool IsLogoSoundPlaying()
+    {
+        var status = new StringBuilder(32);
+        var result = MciSendString(
+            $"status {LogoSoundAlias} mode",
+            status,
+            status.Capacity,
+            IntPtr.Zero);
+        return result == 0 && status.ToString().Trim().Equals("playing", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void StopLogoSound()
+    {
+        _ = MciSendString($"stop {LogoSoundAlias}", null, 0, IntPtr.Zero);
+        _ = MciSendString($"close {LogoSoundAlias}", null, 0, IntPtr.Zero);
+    }
+
+    private static string ExtractLogoSound()
+    {
+        var resourceName = Assembly.GetExecutingAssembly()
+            .GetManifestResourceNames()
+            .FirstOrDefault(name => name.EndsWith(".Rambo.mp3", StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException("The embedded sound clip was not found.");
+
+        using var source = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException("The embedded sound clip could not be opened.");
+
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var mediaDirectory = Path.Combine(appData, "Freight Cost", "Media");
+        Directory.CreateDirectory(mediaDirectory);
+
+        var soundPath = Path.Combine(mediaDirectory, "Rambo.mp3");
+        if (!File.Exists(soundPath) || new FileInfo(soundPath).Length != source.Length)
+        {
+            using var destination = File.Create(soundPath);
+            source.CopyTo(destination);
+        }
+
+        return soundPath;
+    }
+
+    private static void ThrowIfMciFailed(int errorCode)
+    {
+        if (errorCode == 0)
+        {
+            return;
+        }
+
+        var message = new StringBuilder(256);
+        _ = MciGetErrorString(errorCode, message, message.Capacity);
+        throw new InvalidOperationException(message.Length > 0 ? message.ToString() : $"Audio error {errorCode}.");
+    }
+
+    [DllImport("winmm.dll", EntryPoint = "mciSendStringW", CharSet = CharSet.Unicode)]
+    private static extern int MciSendString(
+        string command,
+        StringBuilder? returnValue,
+        int returnLength,
+        IntPtr callback);
+
+    [DllImport("winmm.dll", EntryPoint = "mciGetErrorStringW", CharSet = CharSet.Unicode)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool MciGetErrorString(int errorCode, StringBuilder errorText, int errorTextSize);
+
     /// <summary>
     /// Validates inputs, calculates freight cost, then renders output + history row.
     /// </summary>
@@ -385,11 +723,18 @@ public partial class Form1 : Form
         {
             Text = text,
             Dock = DockStyle.Fill,
-            Margin = new Padding(6),
-            Font = new Font(Font.FontFamily, 12f, FontStyle.Bold)
+            Margin = new Padding(3),
+            Font = new Font("Segoe UI", 13f, FontStyle.Regular)
         };
 
         Theme.StyleSecondaryButton(button);
+        if (text is "CE" or ".")
+        {
+            button.BackColor = Theme.Accent;
+            button.ForeColor = Color.White;
+            button.FlatAppearance.MouseOverBackColor = Theme.AccentHover;
+            button.FlatAppearance.MouseDownBackColor = Theme.AccentPressed;
+        }
         button.Click += (_, _) => onClick();
 
         return button;
@@ -443,38 +788,46 @@ public partial class Form1 : Form
         _history.AllowUserToResizeRows = false;
         _history.AllowUserToResizeColumns = false;
         _history.RowHeadersVisible = false;
+        _history.ScrollBars = ScrollBars.None;
         _history.MultiSelect = false;
         _history.SelectionMode = DataGridViewSelectionMode.CellSelect;
         _history.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
         _history.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
+        _history.Font = new Font("Segoe UI", 9.5f);
         _history.EnableHeadersVisualStyles = false;
         _history.GridColor = Theme.BorderColor;
-        _history.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
+        _history.BorderStyle = BorderStyle.FixedSingle;
+        _history.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+        _history.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+        _history.ColumnHeadersHeight = 42;
+        _history.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+        _history.RowTemplate.Height = 38;
 
-        _history.ColumnHeadersDefaultCellStyle.BackColor = Theme.CardBackground;
+        _history.ColumnHeadersDefaultCellStyle.BackColor = Theme.AppBackground;
         _history.ColumnHeadersDefaultCellStyle.ForeColor = Theme.TextMuted;
         _history.ColumnHeadersDefaultCellStyle.Font = new Font(Font, FontStyle.Bold);
         _history.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
-        _history.DefaultCellStyle.BackColor = Theme.CardBackground;
+        _history.DefaultCellStyle.BackColor = Theme.AppBackground;
         _history.DefaultCellStyle.ForeColor = Theme.TextPrimary;
         _history.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
         _history.DefaultCellStyle.SelectionBackColor = Theme.AccentSoft;
         _history.DefaultCellStyle.SelectionForeColor = Theme.TextPrimary;
-        _history.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(40, 40, 40);
+        _history.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(36, 36, 36);
 
         _history.Columns.Clear();
-        _history.Columns.Add(new DataGridViewTextBoxColumn { Name = "Quote", HeaderText = "Quote", Width = 160 });
+        _history.Columns.Add(new DataGridViewTextBoxColumn { Name = "Quote", HeaderText = "Quote", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, FillWeight = 31 });
         _history.Columns.Add(new DataGridViewTextBoxColumn { Name = "Mul", HeaderText = string.Empty, Width = 20 });
-        _history.Columns.Add(new DataGridViewTextBoxColumn { Name = "Fees", HeaderText = "Fees", Width = 160 });
+        _history.Columns.Add(new DataGridViewTextBoxColumn { Name = "Fees", HeaderText = "Fees", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, FillWeight = 31 });
         _history.Columns.Add(new DataGridViewTextBoxColumn { Name = "Eq", HeaderText = string.Empty, Width = 20 });
-        _history.Columns.Add(new DataGridViewTextBoxColumn { Name = "Freight", HeaderText = "Freight Cost", Width = 110 });
+        _history.Columns.Add(new DataGridViewTextBoxColumn { Name = "Freight", HeaderText = "Freight Cost", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, FillWeight = 25 });
         _history.Columns.Add(new DataGridViewButtonColumn
         {
             Name = "Remove",
             HeaderText = string.Empty,
             Width = 40,
-            Text = "X",
+            Text = "×",
+            FlatStyle = FlatStyle.Flat,
             UseColumnTextForButtonValue = true
         });
 
@@ -484,7 +837,24 @@ public partial class Form1 : Form
         }
 
         _history.CellClick += OnHistoryCellClick;
+        _history.MouseWheel += OnHistoryMouseWheel;
         AddHistoryContextMenu();
+    }
+
+    private void OnHistoryMouseWheel(object? sender, MouseEventArgs e)
+    {
+        if (_history.RowCount == 0)
+        {
+            return;
+        }
+
+        var currentRow = Math.Max(0, _history.FirstDisplayedScrollingRowIndex);
+        var direction = e.Delta > 0 ? -3 : 3;
+        _history.FirstDisplayedScrollingRowIndex = Math.Clamp(
+            currentRow + direction,
+            0,
+            _history.RowCount - 1);
+        UpdateExternalHistoryScrollBars();
     }
 
     private void OnHistoryCellClick(object? sender, DataGridViewCellEventArgs e)
